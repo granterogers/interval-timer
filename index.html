@@ -188,12 +188,6 @@
     padding: 0 6px;
   }
 
-  .row-buttons {
-    display: flex;
-    gap: 10px;
-    margin: 4px 0 18px;
-  }
-  .row-buttons button { flex: 1; padding: 12px; font-size: 0.9rem; }
   footer {
     margin-top: auto;
     padding-top: 24px;
@@ -267,10 +261,6 @@
     </div>
   </div>
 
-  <div class="row-buttons">
-    <button class="secondary" id="testBeepBtn">Test beeps</button>
-    <button class="secondary" id="testGongBtn">Test gong</button>
-  </div>
 </div>
 
 <div class="unlock-note" id="unlockNote">Tap Start once to enable sound on this device.</div>
@@ -297,8 +287,6 @@
   const progressBarEl = document.getElementById("progressBar");
   const startBtn = document.getElementById("startBtn");
   const stopBtn = document.getElementById("stopBtn");
-  const testBeepBtn = document.getElementById("testBeepBtn");
-  const testGongBtn = document.getElementById("testGongBtn");
   const unlockNote = document.getElementById("unlockNote");
 
   // ---------- Persisted settings ----------
@@ -418,6 +406,17 @@
     // category so beeps/gong are heard even with the switch on silent.
     if (silentLoop) {
       silentLoop.play().catch(() => {});
+    }
+    // iOS Safari gates SpeechSynthesis behind its own direct user-gesture
+    // requirement, separate from Web Audio. Speaking a near-silent utterance
+    // here, synchronously in the tap, "primes" it so the real announcements
+    // fired later from setInterval are actually heard.
+    if (window.speechSynthesis) {
+      try {
+        const primer = new SpeechSynthesisUtterance(" ");
+        primer.volume = 0.01;
+        window.speechSynthesis.speak(primer);
+      } catch (e) { /* no-op */ }
     }
   }
 
@@ -619,6 +618,7 @@
     clockEl.classList.remove("leadin");
     elapsed = 0;
     updateDisplay();
+    speak("Begin");
     tickHandle = setInterval(() => {
       elapsed += 1;
       updateDisplay();
@@ -647,13 +647,6 @@
 
   startBtn.addEventListener("click", startSession);
   stopBtn.addEventListener("click", stopSession);
-  testBeepBtn.addEventListener("click", () => {
-    unlockAudio();
-    playBeep(880, 0.12, 0);
-    playBeep(880, 0.12, 0.35);
-    playBeep(880, 0.12, 0.7);
-  });
-  testGongBtn.addEventListener("click", () => { unlockAudio(); playGong(); });
 
   setState(STATE_IDLE);
   updateDisplay();

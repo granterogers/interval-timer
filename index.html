@@ -137,11 +137,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    gap: 12px;
   }
   .field label {
     font-size: 0.95rem;
     color: var(--text);
+    display: block;
   }
   .field .hint {
     display: block;
@@ -149,27 +151,43 @@
     color: var(--muted);
     margin-top: 2px;
   }
-  .field input[type="number"] {
-    width: 84px;
-    font-family: inherit;
-    font-size: 1.05rem;
-    padding: 10px 10px;
-    border-radius: 10px;
-    border: 1px solid #2a3b57;
+
+  /* Stepper control */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
     background: #0c1526;
-    color: var(--text);
+    border: 1px solid #2a3b57;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .step-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 0;
+    background: #16233c;
+    color: var(--accent);
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step-btn:active { background: #1e2f4e; transform: none; }
+  .step-btn:disabled { opacity: 0.3; }
+  .step-value {
+    min-width: 58px;
     text-align: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    padding: 0 6px;
   }
-  select {
-    font-family: inherit;
-    font-size: 0.95rem;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #2a3b57;
-    background: #0c1526;
-    color: var(--text);
-    max-width: 210px;
-  }
+
   .row-buttons {
     display: flex;
     gap: 10px;
@@ -215,34 +233,38 @@
 
   <div class="field">
     <div>
-      <label for="intervalSec">Announce every</label>
+      <label>Announce every</label>
       <span class="hint">seconds (0, 5, 10, 15…)</span>
     </div>
-    <input type="number" id="intervalSec" min="1" max="600" step="1" value="5">
-  </div>
-
-  <div class="field">
-    <div>
-      <label for="maxDuration">Session length</label>
-      <span class="hint">seconds — gong plays at the end</span>
+    <div class="stepper" id="intervalStepper">
+      <button type="button" class="step-btn" data-action="dec" aria-label="Decrease">−</button>
+      <div class="step-value" id="intervalValueDisplay">5</div>
+      <button type="button" class="step-btn" data-action="inc" aria-label="Increase">+</button>
     </div>
-    <input type="number" id="maxDuration" min="5" max="7200" step="5" value="180">
   </div>
 
   <div class="field">
     <div>
-      <label for="leadInSec">Lead-in</label>
+      <label>Session length</label>
+      <span class="hint">minutes — gong plays at the end</span>
+    </div>
+    <div class="stepper" id="durationStepper">
+      <button type="button" class="step-btn" data-action="dec" aria-label="Decrease">−</button>
+      <div class="step-value" id="durationValueDisplay">3</div>
+      <button type="button" class="step-btn" data-action="inc" aria-label="Increase">+</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <div>
+      <label>Lead-in</label>
       <span class="hint">beeps before counting starts</span>
     </div>
-    <input type="number" id="leadInSec" min="0" max="15" step="1" value="3">
-  </div>
-
-  <div class="field">
-    <div>
-      <label for="voiceSelect">Voice</label>
-      <span class="hint">used to announce intervals</span>
+    <div class="stepper" id="leadInStepper">
+      <button type="button" class="step-btn" data-action="dec" aria-label="Decrease">−</button>
+      <div class="step-value" id="leadInValueDisplay">3</div>
+      <button type="button" class="step-btn" data-action="inc" aria-label="Increase">+</button>
     </div>
-    <select id="voiceSelect"></select>
   </div>
 
   <div class="row-buttons">
@@ -265,53 +287,130 @@
   const progressBarEl = document.getElementById("progressBar");
   const startBtn = document.getElementById("startBtn");
   const stopBtn = document.getElementById("stopBtn");
-  const intervalSecInput = document.getElementById("intervalSec");
-  const maxDurationInput = document.getElementById("maxDuration");
-  const leadInSecInput = document.getElementById("leadInSec");
-  const voiceSelect = document.getElementById("voiceSelect");
   const testVoiceBtn = document.getElementById("testVoiceBtn");
   const testGongBtn = document.getElementById("testGongBtn");
   const unlockNote = document.getElementById("unlockNote");
 
   // ---------- Persisted settings ----------
-  const STORAGE_KEY = "interval-timer-settings-v1";
-  function loadSettings() {
+  const STORAGE_KEY = "interval-timer-settings-v2";
+  function loadStoredSettings() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const s = JSON.parse(raw);
-      if (s.intervalSec) intervalSecInput.value = s.intervalSec;
-      if (s.maxDuration) maxDurationInput.value = s.maxDuration;
-      if (s.leadInSec !== undefined) leadInSecInput.value = s.leadInSec;
-      if (s.voiceName) voiceSelect.dataset.preferred = s.voiceName;
-    } catch (e) { /* ignore corrupt storage */ }
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
   }
-  function saveSettings() {
-    const s = {
-      intervalSec: intervalSecInput.value,
-      maxDuration: maxDurationInput.value,
-      leadInSec: leadInSecInput.value,
-      voiceName: voiceSelect.value
-    };
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) {}
+  function saveStoredSettings() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        intervalSec: intervalSec,
+        maxDurationMin: maxDurationMin,
+        leadInSec: leadInSec
+      }));
+    } catch (e) {}
   }
-  loadSettings();
-  [intervalSecInput, maxDurationInput, leadInSecInput, voiceSelect].forEach(el =>
-    el.addEventListener("change", saveSettings)
-  );
+  const stored = loadStoredSettings();
 
-  // ---------- Audio: WebAudio context (shared, unlocked on first tap) ----------
+  // ---------- Stepper control factory ----------
+  function trimNumber(v, decimals) {
+    return Number.isInteger(v) ? String(v) : v.toFixed(decimals);
+  }
+
+  function makeStepper({ containerId, displayId, min, max, step, decimals, initial, onChange }) {
+    const container = document.getElementById(containerId);
+    const displayEl = document.getElementById(displayId);
+    const decBtn = container.querySelector('[data-action="dec"]');
+    const incBtn = container.querySelector('[data-action="inc"]');
+    let value = Math.min(max, Math.max(min, initial));
+    let sessionEnabled = true;
+
+    function render() {
+      displayEl.textContent = trimNumber(value, decimals);
+      decBtn.disabled = !sessionEnabled || value <= min;
+      incBtn.disabled = !sessionEnabled || value >= max;
+    }
+
+    function set(v) {
+      v = Math.round(v / step) * step;
+      v = Math.round(v * 1000) / 1000; // avoid float drift
+      v = Math.min(max, Math.max(min, v));
+      value = v;
+      render();
+      onChange(value);
+    }
+
+    decBtn.addEventListener("click", () => set(value - step));
+    incBtn.addEventListener("click", () => set(value + step));
+
+    render();
+    return {
+      get: () => value,
+      setEnabled: (enabled) => {
+        sessionEnabled = enabled;
+        render();
+      }
+    };
+  }
+
+  let intervalSec = 5, maxDurationMin = 3, leadInSec = 3;
+
+  const intervalStepper = makeStepper({
+    containerId: "intervalStepper", displayId: "intervalValueDisplay",
+    min: 5, max: 300, step: 5, decimals: 0,
+    initial: stored.intervalSec || 5,
+    onChange: (v) => { intervalSec = v; saveStoredSettings(); }
+  });
+  const durationStepper = makeStepper({
+    containerId: "durationStepper", displayId: "durationValueDisplay",
+    min: 0.5, max: 60, step: 0.5, decimals: 1,
+    initial: stored.maxDurationMin || 3,
+    onChange: (v) => { maxDurationMin = v; saveStoredSettings(); }
+  });
+  const leadInStepper = makeStepper({
+    containerId: "leadInStepper", displayId: "leadInValueDisplay",
+    min: 0, max: 15, step: 1, decimals: 0,
+    initial: stored.leadInSec !== undefined ? stored.leadInSec : 3,
+    onChange: (v) => { leadInSec = v; saveStoredSettings(); }
+  });
+  intervalSec = intervalStepper.get();
+  maxDurationMin = durationStepper.get();
+  leadInSec = leadInStepper.get();
+
+  // ---------- Audio: WebAudio context, unlocked on first tap (iOS-safe) ----------
   let audioCtx = null;
+
   function getCtx() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    if (audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
 
+  // Standard iOS Safari unlock trick: must run synchronously inside a user
+  // gesture. Resuming alone is not always enough on iOS/home-screen apps,
+  // so we also play a near-silent buffer to fully open the audio hardware.
+  function unlockAudio() {
+    const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
+    try {
+      const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch (e) { /* no-op */ }
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+  });
+
   function playBeep(freq = 880, duration = 0.12, when = 0) {
     const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
     const t0 = ctx.currentTime + when;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -328,6 +427,7 @@
   // Synthesized pleasant gong/bell using layered detuned partials + soft strike transient.
   function playGong() {
     const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
     const t0 = ctx.currentTime;
     const masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(0.0001, t0);
@@ -356,7 +456,7 @@
     });
 
     // Soft strike transient (short filtered noise burst)
-    const bufferSize = ctx.sampleRate * 0.15;
+    const bufferSize = Math.floor(ctx.sampleRate * 0.15);
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
@@ -372,28 +472,29 @@
     noise.start(t0);
   }
 
-  // ---------- Speech ----------
-  let voices = [];
+  // ---------- Speech: auto-pick one natural-sounding modern female voice ----------
+  const FEMALE_VOICE_PRIORITY = [
+    /Ava/i, /Samantha/i, /Nicky/i, /Allison/i, /Susan/i, /Zoe/i, /Serena/i, /Karen/i,
+    /Google US English/i, /Google UK English Female/i,
+    /Microsoft Aria/i, /Microsoft Jenny/i, /Microsoft Zira/i,
+    /Female/i
+  ];
+  let chosenVoice = null;
+
+  function pickBestVoice() {
+    const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    if (!voices.length) return null;
+    const enVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
+    const pool = enVoices.length ? enVoices : voices;
+    for (const pattern of FEMALE_VOICE_PRIORITY) {
+      const match = pool.find(v => pattern.test(v.name));
+      if (match) return match;
+    }
+    return pool[0];
+  }
+
   function populateVoices() {
-    voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-    if (!voices.length) return;
-    const preferredNames = /Samantha|Google US English|Ava|Nicky|Alex|Serena|Karen/i;
-    voiceSelect.innerHTML = "";
-    voices
-      .filter(v => v.lang && v.lang.startsWith("en"))
-      .concat(voices.filter(v => !v.lang || !v.lang.startsWith("en")))
-      .forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v.name;
-        opt.textContent = v.name + " (" + v.lang + ")";
-        voiceSelect.appendChild(opt);
-      });
-    const preferredStored = voiceSelect.dataset.preferred;
-    const storedMatch = preferredStored && voices.find(v => v.name === preferredStored);
-    const niceMatch = voices.find(v => preferredNames.test(v.name) && v.lang.startsWith("en"));
-    const englishMatch = voices.find(v => v.lang && v.lang.startsWith("en"));
-    const chosen = storedMatch || niceMatch || englishMatch;
-    if (chosen) voiceSelect.value = chosen.name;
+    chosenVoice = pickBestVoice();
   }
   if (window.speechSynthesis) {
     populateVoices();
@@ -404,8 +505,7 @@
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
-    const v = voices.find(v => v.name === voiceSelect.value);
-    if (v) utter.voice = v;
+    if (chosenVoice) utter.voice = chosenVoice;
     utter.rate = 0.95;
     utter.pitch = 1.0;
     window.speechSynthesis.speak(utter);
@@ -431,23 +531,23 @@
   let state = STATE_IDLE;
   let tickHandle = null;
   let elapsed = 0;
-  let intervalSec = 5, maxDuration = 180, leadInSec = 3;
+  let maxDurationSeconds = Math.round(maxDurationMin * 60);
 
   function setState(newState) {
     state = newState;
+    const editable = (state === STATE_IDLE || state === STATE_DONE);
     startBtn.disabled = (state === STATE_LEADIN || state === STATE_RUNNING);
     stopBtn.disabled = (state === STATE_IDLE || state === STATE_DONE);
-    [intervalSecInput, maxDurationInput, leadInSecInput].forEach(
-      el => (el.disabled = state !== STATE_IDLE && state !== STATE_DONE)
-    );
+    intervalStepper.setEnabled(editable);
+    durationStepper.setEnabled(editable);
+    leadInStepper.setEnabled(editable);
   }
 
   function updateDisplay() {
     if (state === STATE_LEADIN) return; // clock shows countdown number separately
     clockEl.classList.remove("leadin");
-    clockEl.style.fontSize = "";
     clockEl.textContent = formatClock(elapsed);
-    const pct = maxDuration > 0 ? Math.min(100, (elapsed / maxDuration) * 100) : 0;
+    const pct = maxDurationSeconds > 0 ? Math.min(100, (elapsed / maxDurationSeconds) * 100) : 0;
     progressBarEl.style.width = pct + "%";
   }
 
@@ -455,16 +555,13 @@
     if (tickHandle) { clearInterval(tickHandle); tickHandle = null; }
   }
 
-  function readSettings() {
-    intervalSec = Math.max(1, parseInt(intervalSecInput.value, 10) || 5);
-    maxDuration = Math.max(1, parseInt(maxDurationInput.value, 10) || 180);
-    leadInSec = Math.max(0, parseInt(leadInSecInput.value, 10) || 0);
-  }
-
   function startSession() {
-    readSettings();
-    getCtx(); // unlock audio on user gesture
+    // Must be the first thing that happens on the click so iOS treats the
+    // whole audio pipeline as unlocked by this user gesture.
+    unlockAudio();
+
     unlockNote.style.display = "none";
+    maxDurationSeconds = Math.round(maxDurationMin * 60);
     elapsed = 0;
     progressBarEl.style.width = "0%";
 
@@ -499,7 +596,7 @@
     tickHandle = setInterval(() => {
       elapsed += 1;
       updateDisplay();
-      if (elapsed >= maxDuration) {
+      if (elapsed >= maxDurationSeconds) {
         clearTick();
         playGong();
         setState(STATE_DONE);
@@ -524,8 +621,8 @@
 
   startBtn.addEventListener("click", startSession);
   stopBtn.addEventListener("click", stopSession);
-  testVoiceBtn.addEventListener("click", () => { getCtx(); speak("Ten seconds"); });
-  testGongBtn.addEventListener("click", () => { getCtx(); playGong(); });
+  testVoiceBtn.addEventListener("click", () => { unlockAudio(); speak("Ten seconds"); });
+  testGongBtn.addEventListener("click", () => { unlockAudio(); playGong(); });
 
   setState(STATE_IDLE);
   updateDisplay();

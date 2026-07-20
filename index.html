@@ -250,7 +250,7 @@
     </div>
     <div class="stepper" id="durationStepper">
       <button type="button" class="step-btn" data-action="dec" aria-label="Decrease">−</button>
-      <div class="step-value" id="durationValueDisplay">3</div>
+      <div class="step-value" id="durationValueDisplay">1</div>
       <button type="button" class="step-btn" data-action="inc" aria-label="Increase">+</button>
     </div>
   </div>
@@ -374,7 +374,7 @@
   const durationStepper = makeStepper({
     containerId: "durationStepper", displayId: "durationValueDisplay",
     min: 0.5, max: 60, step: 0.5, decimals: 1,
-    initial: stored.maxDurationMin || 3,
+    initial: stored.maxDurationMin || 1,
     onChange: (v) => { maxDurationMin = v; saveStoredSettings(); }
   });
   const leadInStepper = makeStepper({
@@ -523,10 +523,17 @@
   function speak(text) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
+    // The silent loop that keeps beeps/gong audible with the ring switch on
+    // silent also fights with iOS's speech engine for the audio session —
+    // pause it while speaking and resume it right after.
+    const resumeLoop = () => { if (silentLoop) silentLoop.play().catch(() => {}); };
+    if (silentLoop && !silentLoop.paused) silentLoop.pause();
     const utter = new SpeechSynthesisUtterance(text);
     if (chosenVoice) utter.voice = chosenVoice;
     utter.rate = 0.95;
     utter.pitch = 1.0;
+    utter.onend = resumeLoop;
+    utter.onerror = resumeLoop;
     window.speechSynthesis.speak(utter);
   }
 

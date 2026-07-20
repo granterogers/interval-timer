@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Interval Timer</title>
+
+<!-- iOS "Add to Home Screen" support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Interval Timer">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #16213b;
+    --accent: #38bdf8;
+    --accent-2: #34d399;
+    --text: #e5edf5;
+    --muted: #8aa0b8;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior: none;
+    user-select: none;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: env(safe-area-inset-top, 20px) 20px calc(env(safe-area-inset-bottom, 20px) + 20px);
+    min-height: 100%;
+  }
+  h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    margin: 12px 0 20px;
+    text-transform: uppercase;
+  }
+  .display {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .state-label {
+    font-size: 0.95rem;
+    color: var(--muted);
+    min-height: 1.3em;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+  .clock {
+    font-size: 4.2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .clock.leadin {
+    color: var(--accent-2);
+    font-size: 6rem;
+  }
+  .progress-wrap {
+    width: 100%;
+    max-width: 420px;
+    height: 8px;
+    background: #1e293b;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.3s linear;
+  }
+  .controls {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  button {
+    font-family: inherit;
+    border: none;
+    border-radius: 14px;
+    padding: 16px 28px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #04121f;
+    background: var(--accent);
+    transition: transform 0.08s ease, opacity 0.15s ease;
+  }
+  button:active { transform: scale(0.96); }
+  button.secondary {
+    background: #22314d;
+    color: var(--text);
+  }
+  button.danger {
+    background: var(--danger);
+    color: #2a0a0a;
+  }
+  button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .panel {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 18px 20px 8px;
+  }
+  .panel h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 14px;
+    font-weight: 600;
+  }
+  .field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .field label {
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+  .field .hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .field input[type="number"] {
+    width: 84px;
+    font-family: inherit;
+    font-size: 1.05rem;
+    padding: 10px 10px;
+    border-radius: 10px;
+    border: 1px solid #2a3b57;
+    background: #0c1526;
+    color: var(--text);
+    text-align: center;
+  }
+  select {
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #2a3b57;
+    background: #0c1526;
+    color: var(--text);
+    max-width: 210px;
+  }
+  .row-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 4px 0 18px;
+  }
+  .row-buttons button { flex: 1; padding: 12px; font-size: 0.9rem; }
+  footer {
+    margin-top: auto;
+    padding-top: 24px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .unlock-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+    max-width: 380px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Interval Timer</h1>
+
+<div class="display">
+  <div class="state-label" id="stateLabel">Ready</div>
+  <div class="clock" id="clock">00:00</div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="controls">
+  <button id="startBtn">Start</button>
+  <button id="stopBtn" class="danger" disabled>Stop</button>
+</div>
+
+<div class="panel">
+  <h2>Settings</h2>
+
+  <div class="field">
+    <div>
+      <label for="intervalSec">Announce every</label>
+      <span class="hint">seconds (0, 5, 10, 15…)</span>
+    </div>
+    <input type="number" id="intervalSec" min="1" max="600" step="1" value="5">
+  </div>
+
+  <div class="field">
+    <div>
+      <label for="maxDuration">Session length</label>
+      <span class="hint">seconds — gong plays at the end</span>
+    </div>
+    <input type="number" id="maxDuration" min="5" max="7200" step="5" value="180">
+  </div>
+
+  <div class="field">
+    <div>
+      <label for="leadInSec">Lead-in</label>
+      <span class="hint">beeps before counting starts</span>
+    </div>
+    <input type="number" id="leadInSec" min="0" max="15" step="1" value="3">
+  </div>
+
+  <div class="field">
+    <div>
+      <label for="voiceSelect">Voice</label>
+      <span class="hint">used to announce intervals</span>
+    </div>
+    <select id="voiceSelect"></select>
+  </div>
+
+  <div class="row-buttons">
+    <button class="secondary" id="testVoiceBtn">Test voice</button>
+    <button class="secondary" id="testGongBtn">Test gong</button>
+  </div>
+</div>
+
+<div class="unlock-note" id="unlockNote">Tap Start once to enable sound on this device.</div>
+
+<footer>Works offline once loaded &middot; Add to Home Screen for the full-screen app.</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Elements ----------
+  const clockEl = document.getElementById("clock");
+  const stateLabelEl = document.getElementById("stateLabel");
+  const progressBarEl = document.getElementById("progressBar");
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  const intervalSecInput = document.getElementById("intervalSec");
+  const maxDurationInput = document.getElementById("maxDuration");
+  const leadInSecInput = document.getElementById("leadInSec");
+  const voiceSelect = document.getElementById("voiceSelect");
+  const testVoiceBtn = document.getElementById("testVoiceBtn");
+  const testGongBtn = document.getElementById("testGongBtn");
+  const unlockNote = document.getElementById("unlockNote");
+
+  // ---------- Persisted settings ----------
+  const STORAGE_KEY = "interval-timer-settings-v1";
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.intervalSec) intervalSecInput.value = s.intervalSec;
+      if (s.maxDuration) maxDurationInput.value = s.maxDuration;
+      if (s.leadInSec !== undefined) leadInSecInput.value = s.leadInSec;
+      if (s.voiceName) voiceSelect.dataset.preferred = s.voiceName;
+    } catch (e) { /* ignore corrupt storage */ }
+  }
+  function saveSettings() {
+    const s = {
+      intervalSec: intervalSecInput.value,
+      maxDuration: maxDurationInput.value,
+      leadInSec: leadInSecInput.value,
+      voiceName: voiceSelect.value
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  loadSettings();
+  [intervalSecInput, maxDurationInput, leadInSecInput, voiceSelect].forEach(el =>
+    el.addEventListener("change", saveSettings)
+  );
+
+  // ---------- Audio: WebAudio context (shared, unlocked on first tap) ----------
+  let audioCtx = null;
+  function getCtx() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playBeep(freq = 880, duration = 0.12, when = 0) {
+    const ctx = getCtx();
+    const t0 = ctx.currentTime + when;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  // Synthesized pleasant gong/bell using layered detuned partials + soft strike transient.
+  function playGong() {
+    const ctx = getCtx();
+    const t0 = ctx.currentTime;
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0.0001, t0);
+    masterGain.gain.exponentialRampToValueAtTime(0.6, t0 + 0.02);
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 5.5);
+    const lowpass = ctx.createBiquadFilter();
+    lowpass.type = "lowpass";
+    lowpass.frequency.value = 3200;
+    masterGain.connect(lowpass).connect(ctx.destination);
+
+    // Bell partials (inharmonic ratios typical of bell/gong timbre)
+    const fundamental = 220;
+    const partials = [1, 2.0, 2.76, 3.5, 4.2, 5.4];
+    partials.forEach((ratio, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = fundamental * ratio;
+      const amp = 0.5 / (i + 1);
+      const decay = 5.0 - i * 0.5;
+      g.gain.setValueAtTime(amp, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(decay, 1.2));
+      osc.connect(g).connect(masterGain);
+      osc.start(t0);
+      osc.stop(t0 + 6);
+    });
+
+    // Soft strike transient (short filtered noise burst)
+    const bufferSize = ctx.sampleRate * 0.15;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.value = 900;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.4, t0);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
+    noise.connect(noiseFilter).connect(noiseGain).connect(masterGain);
+    noise.start(t0);
+  }
+
+  // ---------- Speech ----------
+  let voices = [];
+  function populateVoices() {
+    voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    if (!voices.length) return;
+    const preferredNames = /Samantha|Google US English|Ava|Nicky|Alex|Serena|Karen/i;
+    voiceSelect.innerHTML = "";
+    voices
+      .filter(v => v.lang && v.lang.startsWith("en"))
+      .concat(voices.filter(v => !v.lang || !v.lang.startsWith("en")))
+      .forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v.name;
+        opt.textContent = v.name + " (" + v.lang + ")";
+        voiceSelect.appendChild(opt);
+      });
+    const preferredStored = voiceSelect.dataset.preferred;
+    const storedMatch = preferredStored && voices.find(v => v.name === preferredStored);
+    const niceMatch = voices.find(v => preferredNames.test(v.name) && v.lang.startsWith("en"));
+    const englishMatch = voices.find(v => v.lang && v.lang.startsWith("en"));
+    const chosen = storedMatch || niceMatch || englishMatch;
+    if (chosen) voiceSelect.value = chosen.name;
+  }
+  if (window.speechSynthesis) {
+    populateVoices();
+    window.speechSynthesis.onvoiceschanged = populateVoices;
+  }
+
+  function speak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    const v = voices.find(v => v.name === voiceSelect.value);
+    if (v) utter.voice = v;
+    utter.rate = 0.95;
+    utter.pitch = 1.0;
+    window.speechSynthesis.speak(utter);
+  }
+
+  function formatAnnouncement(totalSeconds) {
+    if (totalSeconds < 60) return totalSeconds + (totalSeconds === 1 ? " second" : " seconds");
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    let out = mins + (mins === 1 ? " minute" : " minutes");
+    if (secs > 0) out += " " + secs + (secs === 1 ? " second" : " seconds");
+    return out;
+  }
+
+  function formatClock(totalSeconds) {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  // ---------- Timer state machine ----------
+  const STATE_IDLE = "idle", STATE_LEADIN = "leadin", STATE_RUNNING = "running", STATE_DONE = "done";
+  let state = STATE_IDLE;
+  let tickHandle = null;
+  let elapsed = 0;
+  let intervalSec = 5, maxDuration = 180, leadInSec = 3;
+
+  function setState(newState) {
+    state = newState;
+    startBtn.disabled = (state === STATE_LEADIN || state === STATE_RUNNING);
+    stopBtn.disabled = (state === STATE_IDLE || state === STATE_DONE);
+    [intervalSecInput, maxDurationInput, leadInSecInput].forEach(
+      el => (el.disabled = state !== STATE_IDLE && state !== STATE_DONE)
+    );
+  }
+
+  function updateDisplay() {
+    if (state === STATE_LEADIN) return; // clock shows countdown number separately
+    clockEl.classList.remove("leadin");
+    clockEl.style.fontSize = "";
+    clockEl.textContent = formatClock(elapsed);
+    const pct = maxDuration > 0 ? Math.min(100, (elapsed / maxDuration) * 100) : 0;
+    progressBarEl.style.width = pct + "%";
+  }
+
+  function clearTick() {
+    if (tickHandle) { clearInterval(tickHandle); tickHandle = null; }
+  }
+
+  function readSettings() {
+    intervalSec = Math.max(1, parseInt(intervalSecInput.value, 10) || 5);
+    maxDuration = Math.max(1, parseInt(maxDurationInput.value, 10) || 180);
+    leadInSec = Math.max(0, parseInt(leadInSecInput.value, 10) || 0);
+  }
+
+  function startSession() {
+    readSettings();
+    getCtx(); // unlock audio on user gesture
+    unlockNote.style.display = "none";
+    elapsed = 0;
+    progressBarEl.style.width = "0%";
+
+    if (leadInSec > 0) {
+      setState(STATE_LEADIN);
+      stateLabelEl.textContent = "Get ready…";
+      clockEl.classList.add("leadin");
+      let count = leadInSec;
+      clockEl.textContent = String(count);
+      playBeep(880, 0.12);
+      tickHandle = setInterval(() => {
+        count -= 1;
+        if (count > 0) {
+          clockEl.textContent = String(count);
+          playBeep(880, 0.12);
+        } else {
+          clearTick();
+          beginRunning();
+        }
+      }, 1000);
+    } else {
+      beginRunning();
+    }
+  }
+
+  function beginRunning() {
+    setState(STATE_RUNNING);
+    stateLabelEl.textContent = "Running";
+    clockEl.classList.remove("leadin");
+    elapsed = 0;
+    updateDisplay();
+    tickHandle = setInterval(() => {
+      elapsed += 1;
+      updateDisplay();
+      if (elapsed >= maxDuration) {
+        clearTick();
+        playGong();
+        setState(STATE_DONE);
+        stateLabelEl.textContent = "Complete";
+        return;
+      }
+      if (intervalSec > 0 && elapsed % intervalSec === 0) {
+        speak(formatAnnouncement(elapsed));
+      }
+    }, 1000);
+  }
+
+  function stopSession() {
+    clearTick();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    setState(STATE_IDLE);
+    stateLabelEl.textContent = "Ready";
+    clockEl.classList.remove("leadin");
+    elapsed = 0;
+    updateDisplay();
+  }
+
+  startBtn.addEventListener("click", startSession);
+  stopBtn.addEventListener("click", stopSession);
+  testVoiceBtn.addEventListener("click", () => { getCtx(); speak("Ten seconds"); });
+  testGongBtn.addEventListener("click", () => { getCtx(); playGong(); });
+
+  setState(STATE_IDLE);
+  updateDisplay();
+
+  // ---------- Service worker for offline use ----------
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>

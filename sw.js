@@ -1,4 +1,4 @@
-const CACHE_NAME = "interval-timer-v4";
+const CACHE_NAME = "interval-timer-v5";
 const ASSETS = [
   "./",
   "./index.html",
@@ -12,6 +12,12 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => {})
   );
+  // Always take over immediately on install, regardless of whether any
+  // already-open tab's JS asks us to. Waiting for a postMessage from the
+  // client created a deadlock: the client code that would send it only
+  // exists in the NEW page, which an old, still-active service worker keeps
+  // preventing from ever loading. Unconditional skipWaiting breaks that.
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

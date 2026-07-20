@@ -1,4 +1,4 @@
-const CACHE_NAME = "interval-timer-v1";
+const CACHE_NAME = "interval-timer-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -12,7 +12,6 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => {})
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -24,8 +23,23 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Take over immediately when told to, instead of waiting for all tabs to close.
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
+// Network-first: always serve the freshest copy when online (so deploys show
+// up immediately), falling back to the cache only when offline.
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

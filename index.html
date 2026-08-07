@@ -188,6 +188,57 @@
     padding: 0 6px;
   }
 
+  /* Toggle switch */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #0c1526;
+    border: 1px solid #2a3b57;
+    border-radius: 999px;
+    transition: background-color 0.15s ease;
+  }
+  .switch-slider::before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+  }
+  .switch input:checked + .switch-slider {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .switch input:checked + .switch-slider::before {
+    transform: translateX(20px);
+    background: #04121f;
+  }
+  .switch input:disabled + .switch-slider {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .rest-options {
+    border-top: 1px solid #22314d;
+    padding-top: 18px;
+    margin-top: -4px;
+  }
+
   footer {
     margin-top: auto;
     padding-top: 24px;
@@ -261,6 +312,42 @@
     </div>
   </div>
 
+  <div class="field">
+    <div>
+      <label>Rest between rounds</label>
+      <span class="hint">counts up after the gong</span>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="restToggle">
+      <span class="switch-slider"></span>
+    </label>
+  </div>
+
+  <div class="rest-options" id="restOptions">
+    <div class="field">
+      <div>
+        <label>Rest duration</label>
+        <span class="hint">minutes</span>
+      </div>
+      <div class="stepper" id="restDurationStepper">
+        <button type="button" class="step-btn" data-action="dec" aria-label="Decrease">−</button>
+        <div class="step-value" id="restDurationValueDisplay">1</div>
+        <button type="button" class="step-btn" data-action="inc" aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div>
+        <label>Restart round after rest</label>
+        <span class="hint">otherwise it just stops</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="autoRestartToggle">
+        <span class="switch-slider"></span>
+      </label>
+    </div>
+  </div>
+
 </div>
 
 <div class="unlock-note" id="unlockNote">Tap Start once to enable sound on this device.</div>
@@ -288,6 +375,9 @@
   const startBtn = document.getElementById("startBtn");
   const stopBtn = document.getElementById("stopBtn");
   const unlockNote = document.getElementById("unlockNote");
+  const restToggle = document.getElementById("restToggle");
+  const restOptions = document.getElementById("restOptions");
+  const autoRestartToggle = document.getElementById("autoRestartToggle");
 
   // ---------- Persisted settings ----------
   const STORAGE_KEY = "interval-timer-settings-v2";
@@ -304,7 +394,10 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         intervalSec: intervalSec,
         maxDurationMin: maxDurationMin,
-        leadInSec: leadInSec
+        leadInSec: leadInSec,
+        restEnabled: restEnabled,
+        restDurationMin: restDurationMin,
+        autoRestart: autoRestart
       }));
     } catch (e) {}
   }
@@ -352,6 +445,7 @@
   }
 
   let intervalSec = 5, maxDurationMin = 3, leadInSec = 3;
+  let restEnabled = false, restDurationMin = 1, autoRestart = true;
 
   const intervalStepper = makeStepper({
     containerId: "intervalStepper", displayId: "intervalValueDisplay",
@@ -371,9 +465,32 @@
     initial: stored.leadInSec !== undefined ? stored.leadInSec : 3,
     onChange: (v) => { leadInSec = v; saveStoredSettings(); }
   });
+  const restDurationStepper = makeStepper({
+    containerId: "restDurationStepper", displayId: "restDurationValueDisplay",
+    min: 0.5, max: 30, step: 0.5, decimals: 1,
+    initial: stored.restDurationMin || 1,
+    onChange: (v) => { restDurationMin = v; saveStoredSettings(); }
+  });
   intervalSec = intervalStepper.get();
   maxDurationMin = durationStepper.get();
   leadInSec = leadInStepper.get();
+  restDurationMin = restDurationStepper.get();
+
+  restEnabled = stored.restEnabled === true;
+  autoRestart = stored.autoRestart !== undefined ? stored.autoRestart : true;
+  restToggle.checked = restEnabled;
+  autoRestartToggle.checked = autoRestart;
+  restOptions.style.display = restEnabled ? "" : "none";
+
+  restToggle.addEventListener("change", () => {
+    restEnabled = restToggle.checked;
+    restOptions.style.display = restEnabled ? "" : "none";
+    saveStoredSettings();
+  });
+  autoRestartToggle.addEventListener("change", () => {
+    autoRestart = autoRestartToggle.checked;
+    saveStoredSettings();
+  });
 
   // ---------- Audio: WebAudio context, unlocked on first tap (iOS-safe) ----------
   let audioCtx = null;
@@ -552,27 +669,32 @@
   }
 
   // ---------- Timer state machine ----------
-  const STATE_IDLE = "idle", STATE_LEADIN = "leadin", STATE_RUNNING = "running", STATE_DONE = "done";
+  const STATE_IDLE = "idle", STATE_LEADIN = "leadin", STATE_RUNNING = "running", STATE_RESTING = "resting", STATE_DONE = "done";
   let state = STATE_IDLE;
   let tickHandle = null;
   let elapsed = 0;
   let maxDurationSeconds = Math.round(maxDurationMin * 60);
+  let restDurationSeconds = Math.round(restDurationMin * 60);
 
   function setState(newState) {
     state = newState;
     const editable = (state === STATE_IDLE || state === STATE_DONE);
-    startBtn.disabled = (state === STATE_LEADIN || state === STATE_RUNNING);
+    startBtn.disabled = (state === STATE_LEADIN || state === STATE_RUNNING || state === STATE_RESTING);
     stopBtn.disabled = (state === STATE_IDLE || state === STATE_DONE);
     intervalStepper.setEnabled(editable);
     durationStepper.setEnabled(editable);
     leadInStepper.setEnabled(editable);
+    restDurationStepper.setEnabled(editable);
+    restToggle.disabled = !editable;
+    autoRestartToggle.disabled = !editable;
   }
 
   function updateDisplay() {
     if (state === STATE_LEADIN) return; // clock shows countdown number separately
     clockEl.classList.remove("leadin");
     clockEl.textContent = formatClock(elapsed);
-    const pct = maxDurationSeconds > 0 ? Math.min(100, (elapsed / maxDurationSeconds) * 100) : 0;
+    const target = state === STATE_RESTING ? restDurationSeconds : maxDurationSeconds;
+    const pct = target > 0 ? Math.min(100, (elapsed / target) * 100) : 0;
     progressBarEl.style.width = pct + "%";
   }
 
@@ -625,12 +747,40 @@
       if (elapsed >= maxDurationSeconds) {
         clearTick();
         playGong();
-        setState(STATE_DONE);
-        stateLabelEl.textContent = "Complete";
+        if (restEnabled) {
+          beginResting();
+        } else {
+          setState(STATE_DONE);
+          stateLabelEl.textContent = "Complete";
+        }
         return;
       }
       if (intervalSec > 0 && elapsed % intervalSec === 0) {
         speak(formatAnnouncement(elapsed));
+      }
+    }, 1000);
+  }
+
+  function beginResting() {
+    setState(STATE_RESTING);
+    stateLabelEl.textContent = "Resting";
+    clockEl.classList.remove("leadin");
+    elapsed = 0;
+    restDurationSeconds = Math.round(restDurationMin * 60);
+    updateDisplay();
+    tickHandle = setInterval(() => {
+      elapsed += 1;
+      updateDisplay();
+      if (elapsed >= restDurationSeconds) {
+        clearTick();
+        if (autoRestart) {
+          startSession();
+        } else {
+          setState(STATE_DONE);
+          stateLabelEl.textContent = "Complete";
+          elapsed = 0;
+          updateDisplay();
+        }
       }
     }, 1000);
   }

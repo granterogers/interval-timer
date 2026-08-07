@@ -768,6 +768,7 @@
     elapsed = 0;
     restDurationSeconds = Math.round(restDurationMin * 60);
     updateDisplay();
+    speak("Rest for " + formatAnnouncement(restDurationSeconds));
     tickHandle = setInterval(() => {
       elapsed += 1;
       updateDisplay();

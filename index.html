@@ -502,6 +502,29 @@
     return audioCtx;
   }
 
+  // Shared loudness stage for beeps/gong: lets us drive the oscillators much
+  // harder for volume, while a tanh soft-clip curve keeps the output bounded
+  // to [-1, 1] so it saturates warmly instead of hard-clipping/crackling.
+  let loudnessShaper = null;
+  function getLoudOutput() {
+    const ctx = getCtx();
+    if (!loudnessShaper) {
+      loudnessShaper = ctx.createWaveShaper();
+      const amount = 2.5;
+      const samples = 1024;
+      const curve = new Float32Array(samples);
+      const norm = Math.tanh(amount);
+      for (let i = 0; i < samples; i++) {
+        const x = (i / (samples - 1)) * 2 - 1;
+        curve[i] = Math.tanh(amount * x) / norm;
+      }
+      loudnessShaper.curve = curve;
+      loudnessShaper.oversample = "4x";
+      loudnessShaper.connect(ctx.destination);
+    }
+    return loudnessShaper;
+  }
+
   const silentLoop = document.getElementById("silentLoop");
 
   // Standard iOS Safari unlock trick: must run synchronously inside a user
@@ -552,9 +575,9 @@
     osc.type = "sine";
     osc.frequency.value = freq;
     gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(1.6, t0 + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-    osc.connect(gain).connect(ctx.destination);
+    osc.connect(gain).connect(getLoudOutput());
     osc.start(t0);
     osc.stop(t0 + duration + 0.02);
   }
@@ -566,12 +589,12 @@
     const t0 = ctx.currentTime;
     const masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(0.0001, t0);
-    masterGain.gain.exponentialRampToValueAtTime(0.6, t0 + 0.02);
+    masterGain.gain.exponentialRampToValueAtTime(1.8, t0 + 0.02);
     masterGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 5.5);
     const lowpass = ctx.createBiquadFilter();
     lowpass.type = "lowpass";
     lowpass.frequency.value = 3200;
-    masterGain.connect(lowpass).connect(ctx.destination);
+    masterGain.connect(lowpass).connect(getLoudOutput());
 
     // Bell partials (inharmonic ratios typical of bell/gong timbre)
     const fundamental = 220;
@@ -601,7 +624,7 @@
     noiseFilter.type = "bandpass";
     noiseFilter.frequency.value = 900;
     const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.4, t0);
+    noiseGain.gain.setValueAtTime(0.7, t0);
     noiseGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
     noise.connect(noiseFilter).connect(noiseGain).connect(masterGain);
     noise.start(t0);

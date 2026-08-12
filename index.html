@@ -352,12 +352,6 @@
     font-size: 0.72rem;
     color: var(--muted);
   }
-  .voice-uri {
-    font-size: 0.62rem;
-    color: #56698a;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    word-break: break-all;
-  }
   .voice-option .check {
     flex-shrink: 0;
     color: var(--accent);
@@ -414,7 +408,7 @@
     </div>
     <div class="settings-field">
       <label>Announcement voice</label>
-      <p class="voice-tip">For noticeably better quality on iPhone, pick a voice below, then in Settings → Accessibility → Spoken Content → Voices find that same name and download its Enhanced or Premium version — the app will use whichever quality you've set automatically.</p>
+      <p class="voice-tip">These are high-quality neural voices built into the app — no iPhone voice downloads needed. They work fully offline.</p>
       <div class="voice-picker" id="voicePicker"></div>
     </div>
     <div class="version-tag" id="versionTag"></div>
@@ -549,7 +543,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.4";
+  const APP_VERSION = "1.5.5";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -571,7 +565,7 @@
         restEnabled: restEnabled,
         restDurationMin: restDurationMin,
         autoRestart: autoRestart,
-        voiceURI: userVoicePref
+        voiceKey: selectedVoiceKey
       }));
     } catch (e) {}
   }
@@ -620,7 +614,6 @@
 
   let intervalSec = 5, maxDurationMin = 3, leadInSec = 3;
   let restEnabled = false, restDurationMin = 1, autoRestart = true;
-  let userVoicePref = stored.voiceURI || null;
 
   const intervalStepper = makeStepper({
     containerId: "intervalStepper", displayId: "intervalValueDisplay",
@@ -670,10 +663,7 @@
   // ---------- Settings modal ----------
   function openSettings() {
     settingsOverlay.style.display = "flex";
-    // Re-read the voice list every time Settings is opened — iOS doesn't
-    // always fire voiceschanged promptly after a new voice finishes
-    // downloading, so this gives the freshest possible snapshot.
-    populateVoices();
+    loadVoiceClips(selectedVoiceKey);
   }
   function closeSettings() { settingsOverlay.style.display = "none"; }
   settingsBtn.addEventListener("click", openSettings);
@@ -733,34 +723,16 @@
     // iOS silences the Web Audio API whenever the phone's ring/silent switch
     // is set to silent, unless an HTML media element is actively playing.
     // Starting this inaudible loop flips the page into the "playback" audio
-    // category so beeps/gong are heard even with the switch on silent.
+    // category so beeps/gong/voice clips are heard even with the switch on
+    // silent.
     if (silentLoop) {
       silentLoop.play().catch(() => {});
-    }
-    // iOS Safari gates SpeechSynthesis behind its own direct user-gesture
-    // requirement, separate from Web Audio. Speaking a near-silent utterance
-    // here, synchronously in the tap, "primes" it so the real announcements
-    // fired later from setInterval are actually heard.
-    if (window.speechSynthesis) {
-      try {
-        const primer = new SpeechSynthesisUtterance(" ");
-        primer.volume = 0.01;
-        window.speechSynthesis.speak(primer);
-      } catch (e) { /* no-op */ }
     }
   }
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
-      // iOS Safari's speech engine can go silently unresponsive after the
-      // tab/app has been backgrounded (screen lock, app switch) — nudging it
-      // awake here, and re-reading the voice list in case it was reset,
-      // avoids needing to force-quit and relaunch the app.
-      if (window.speechSynthesis) {
-        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-        populateVoices();
-      }
     }
   });
 
@@ -828,217 +800,104 @@
     noise.start(t0);
   }
 
-  // ---------- Speech: pick a voice (user override, else auto-pick a natural one) ----------
-  const FEMALE_VOICE_PRIORITY = [
-    /Ava/i, /Samantha/i, /Nicky/i, /Allison/i, /Susan/i, /Zoe/i, /Serena/i, /Karen/i,
-    /Google US English/i, /Google UK English Female/i,
-    /Microsoft Aria/i, /Microsoft Jenny/i, /Microsoft Zira/i,
-    /Female/i
+  // ---------- Speech: pre-recorded neural-voice clips, no browser TTS ----------
+  // iOS's Web Speech API cannot reliably access downloaded Enhanced/Premium
+  // system voices (confirmed on-device) and its speech engine can silently
+  // stop working after backgrounding. Since this app only ever needs to
+  // announce a small fixed vocabulary, that vocabulary is pre-recorded once
+  // with real high-quality neural voices and played back via Web Audio —
+  // sidestepping both problems entirely.
+  const VOICE_CATALOG = [
+    { key: "jenny", name: "Jenny", meta: "British, warm — default" },
+    { key: "ljspeech", name: "LJSpeech", meta: "American, clear" },
+    { key: "ryan", name: "Ryan", meta: "American, deep" },
+    { key: "cori", name: "Cori", meta: "British, crisp" },
+    { key: "alan", name: "Alan", meta: "British, calm" },
+    { key: "norman", name: "Norman", meta: "American, soft" }
   ];
-  // Apple's built-in novelty/joke voices (Zarvox, Bad News, etc.) — nobody
-  // wants their interval announced by one of these, so they're excluded
-  // outright rather than merely ranked low.
-  const NOVELTY_VOICE_NAMES = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Wobble|Deranged|Good News|Hysterical|Jester|Organ|Pipe Organ|Superstar|Trinoids|Whisper|Zarvox)$/i;
+  const CLIP_NAMES = (function () {
+    const names = [];
+    for (let i = 0; i <= 59; i++) names.push(String(i));
+    names.push("minute", "minutes", "second", "seconds", "begin", "restfor");
+    return names;
+  })();
 
-  let chosenVoice = null;
+  let selectedVoiceKey = (stored.voiceKey && VOICE_CATALOG.some((v) => v.key === stored.voiceKey))
+    ? stored.voiceKey
+    : "jenny";
 
-  function isNoveltyVoice(voice) {
-    if (NOVELTY_VOICE_NAMES.test((voice.name || "").trim())) return true;
-    // Confirmed on-device via voiceURI (e.g. "com.apple.eloquence.en-GB.Eddy"):
-    // Eloquence is Apple's old formant-synthesis accessibility engine — fast
-    // and useful for screen-reader power users, but distinctly robotic and
-    // not what anyone wants announcing a workout timer.
-    if (voice.voiceURI && /eloquence/i.test(voice.voiceURI)) return true;
-    return false;
+  const clipCache = {};
+  const clipLoadPromises = {};
+
+  function clipUrl(voiceKey, name) {
+    return "voices/" + voiceKey + "/" + name + ".mp3";
   }
 
-  // Dedupe by voiceURI — iOS Safari has a known bug where getVoices() can
-  // return the literal same voice more than once (confirmed on-device: two
-  // "Daniel — en-GB" rows with an identical voiceURI, not two different
-  // voices), especially after repeated calls across voiceschanged/reopens.
-  function dedupeVoices(voices) {
-    const seen = new Set();
-    return voices.filter((v) => {
-      if (seen.has(v.voiceURI)) return false;
-      seen.add(v.voiceURI);
-      return true;
+  function loadVoiceClips(voiceKey) {
+    if (clipLoadPromises[voiceKey]) return clipLoadPromises[voiceKey];
+    const ctx = getCtx();
+    clipCache[voiceKey] = clipCache[voiceKey] || {};
+    clipLoadPromises[voiceKey] = Promise.all(
+      CLIP_NAMES.map((name) =>
+        fetch(clipUrl(voiceKey, name))
+          .then((r) => r.arrayBuffer())
+          .then((buf) => ctx.decodeAudioData(buf))
+          .then((audioBuffer) => { clipCache[voiceKey][name] = audioBuffer; })
+          .catch(() => { /* missing/undecodable clip: that word is silently skipped */ })
+      )
+    );
+    return clipLoadPromises[voiceKey];
+  }
+
+  function playClips(names) {
+    const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
+    const voiceKey = selectedVoiceKey;
+    return loadVoiceClips(voiceKey).then(() => {
+      const gap = 0.09; // small natural pause between words
+      let t = ctx.currentTime + 0.05;
+      names.forEach((name) => {
+        const buffer = clipCache[voiceKey] && clipCache[voiceKey][name];
+        if (!buffer) return;
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+        src.connect(getLoudOutput());
+        src.start(t);
+        t += buffer.duration + gap;
+      });
     });
   }
 
-  // NOTE: iOS does NOT expose which quality tier (Default/Enhanced/Premium)
-  // a voice is set to anywhere in voiceURI or name — confirmed on-device: a
-  // voice set to "Enhanced" in Settings still reports through here with no
-  // distinguishing marker. There is exactly one selectable entry per voice
-  // name; the OS silently renders it at whatever quality you've downloaded
-  // for that name. So there's no reliable signal to sort or label by here.
-
-  function detectedLangCode() {
-    return ((navigator.language || navigator.userLanguage || "en") + "").split("-")[0].toLowerCase();
+  function renderVoicePicker() {
+    voicePicker.innerHTML = VOICE_CATALOG.map((v) => {
+      const selected = v.key === selectedVoiceKey;
+      return '<button type="button" class="voice-option' + (selected ? " selected" : "") + '" data-voice="' + v.key + '">' +
+        '<span class="voice-option-text"><span class="voice-name">' + v.name + '</span>' +
+        '<span class="voice-meta">' + v.meta + '</span></span>' +
+        '<span class="check">✓</span></button>';
+    }).join("");
   }
-
-  function pickBestVoice(voices) {
-    const pool = voices.filter(v => !isNoveltyVoice(v));
-    if (!pool.length) return null;
-    const detected = detectedLangCode();
-    const localeVoices = pool.filter(v => v.lang && v.lang.toLowerCase().startsWith(detected));
-    const enVoices = pool.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
-    const candidates = localeVoices.length ? localeVoices : (enVoices.length ? enVoices : pool);
-    for (const pattern of FEMALE_VOICE_PRIORITY) {
-      const match = candidates.find(v => pattern.test(v.name));
-      if (match) return match;
-    }
-    return candidates[0];
-  }
-
-  function resolveVoice(voices) {
-    if (userVoicePref) {
-      const match = voices.find(v => v.voiceURI === userVoicePref);
-      if (match) return match;
-    }
-    return pickBestVoice(voices);
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  }
-
-  function languageDisplayName(langCode) {
-    try {
-      const dn = new Intl.DisplayNames([navigator.language || "en"], { type: "language" });
-      return dn.of(langCode) || langCode.toUpperCase();
-    } catch (e) {
-      return langCode.toUpperCase();
-    }
-  }
-
-  function groupVoicesByLanguage(voices) {
-    const groups = {};
-    voices.forEach((v) => {
-      const code = (v.lang || "und").split("-")[0].toLowerCase();
-      if (!groups[code]) groups[code] = [];
-      groups[code].push(v);
-    });
-    Object.values(groups).forEach((list) => {
-      list.sort((a, b) => a.name.localeCompare(b.name));
-    });
-    return groups;
-  }
-
-  function orderedGroupKeys(groups) {
-    const detected = detectedLangCode();
-    const keys = Object.keys(groups).sort((a, b) => languageDisplayName(a).localeCompare(languageDisplayName(b)));
-    const primary = [];
-    if (groups[detected]) primary.push(detected);
-    if (detected !== "en" && groups.en && !primary.includes("en")) primary.push("en");
-    return [...primary, ...keys.filter((k) => !primary.includes(k))];
-  }
-
-  function voiceOptionHTML(voice, selectedURI) {
-    const selected = voice.voiceURI === selectedURI;
-    return '<button type="button" class="voice-option' + (selected ? " selected" : "") + '" data-voice="' + escapeHtml(voice.voiceURI) + '">' +
-      '<span class="voice-option-text"><span class="voice-name">' + escapeHtml(voice.name) + '</span>' +
-      '<span class="voice-meta">' + escapeHtml(voice.lang || "") + '</span>' +
-      '<span class="voice-uri">' + escapeHtml(voice.voiceURI || "") + '</span></span>' +
-      '<span class="check">✓</span></button>';
-  }
-
-  function rebuildVoicePicker(voices) {
-    const pool = voices.filter(v => !isNoveltyVoice(v));
-    const selectedURI = userVoicePref || "";
-    let html = '<button type="button" class="voice-option' + (!userVoicePref ? " selected" : "") + '" data-voice="">' +
-      '<span class="voice-option-text"><span class="voice-name">Automatic (recommended)</span>' +
-      '<span class="voice-meta">Best available voice, picked for you</span></span>' +
-      '<span class="check">✓</span></button>';
-
-    const groups = groupVoicesByLanguage(pool);
-    const order = orderedGroupKeys(groups);
-    order.forEach((code, i) => {
-      const list = groups[code];
-      html += '<details class="voice-group"' + (i === 0 ? " open" : "") + '>' +
-        '<summary>' + escapeHtml(languageDisplayName(code)) + ' <span>(' + list.length + ')</span></summary>' +
-        '<div class="voice-list">' + list.map((v) => voiceOptionHTML(v, selectedURI)).join("") + '</div>' +
-        '</details>';
-    });
-
-    voicePicker.innerHTML = html;
-  }
-
-  function populateVoices() {
-    const voices = dedupeVoices(window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
-    if (voices.length) chosenVoice = resolveVoice(voices);
-    rebuildVoicePicker(voices);
-  }
-  if (window.speechSynthesis) {
-    populateVoices();
-    window.speechSynthesis.onvoiceschanged = populateVoices;
-  }
+  renderVoicePicker();
+  loadVoiceClips(selectedVoiceKey);
 
   voicePicker.addEventListener("click", (e) => {
     const btn = e.target.closest(".voice-option");
     if (!btn) return;
-    userVoicePref = btn.dataset.voice || null;
+    selectedVoiceKey = btn.dataset.voice;
     saveStoredSettings();
-    const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-    chosenVoice = resolveVoice(voices);
     voicePicker.querySelectorAll(".voice-option.selected").forEach((el) => el.classList.remove("selected"));
     btn.classList.add("selected");
     unlockAudio();
-    speak("This is a test of the selected voice.");
+    playClips(["restfor", "1", "minute"]);
   });
 
-  // Periodic nudge: iOS Safari's speech engine occasionally goes idle/paused
-  // on its own (especially after the tab was backgrounded) and never comes
-  // back without this kind of poke, previously requiring a force-quit.
-  setInterval(() => {
-    if (window.speechSynthesis && window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
-  }, 4000);
-
-  function speak(text) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    // The silent loop that keeps beeps/gong audible with the ring switch on
-    // silent also fights with iOS's speech engine for the audio session —
-    // pause it while speaking and resume it right after.
-    const resumeLoop = () => { if (silentLoop) silentLoop.play().catch(() => {}); };
-    if (silentLoop && !silentLoop.paused) silentLoop.pause();
-
-    let started = false;
-    function fire(isRetry) {
-      const utter = new SpeechSynthesisUtterance(text);
-      if (chosenVoice) {
-        try { utter.voice = chosenVoice; } catch (e) { /* fall back to default voice */ }
-      }
-      utter.rate = 0.95;
-      utter.pitch = 1.0;
-      utter.onstart = () => { started = true; };
-      utter.onend = resumeLoop;
-      utter.onerror = resumeLoop;
-      window.speechSynthesis.speak(utter);
-      if (!isRetry) {
-        // iOS occasionally swallows speak() calls silently after the engine
-        // has been idle/backgrounded; if it never actually started, force
-        // one fresh retry instead of leaving the app looking dead until
-        // it's force-quit and relaunched.
-        setTimeout(() => {
-          if (!started && !window.speechSynthesis.speaking) {
-            window.speechSynthesis.cancel();
-            fire(true);
-          }
-        }, 300);
-      }
-    }
-    fire(false);
-  }
-
-  function formatAnnouncement(totalSeconds) {
-    if (totalSeconds < 60) return totalSeconds + (totalSeconds === 1 ? " second" : " seconds");
+  function formatAnnouncementTokens(totalSeconds) {
+    if (totalSeconds < 60) return [String(totalSeconds), totalSeconds === 1 ? "second" : "seconds"];
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
-    let out = mins + (mins === 1 ? " minute" : " minutes");
-    if (secs > 0) out += " " + secs + (secs === 1 ? " second" : " seconds");
-    return out;
+    const tokens = [String(mins), mins === 1 ? "minute" : "minutes"];
+    if (secs > 0) tokens.push(String(secs), secs === 1 ? "second" : "seconds");
+    return tokens;
   }
 
   function formatClock(totalSeconds) {
@@ -1119,7 +978,7 @@
     clockEl.classList.remove("leadin");
     elapsed = 0;
     updateDisplay();
-    speak("Begin");
+    playClips(["begin"]);
     tickHandle = setInterval(() => {
       elapsed += 1;
       updateDisplay();
@@ -1135,7 +994,7 @@
         return;
       }
       if (intervalSec > 0 && elapsed % intervalSec === 0) {
-        speak(formatAnnouncement(elapsed));
+        playClips(formatAnnouncementTokens(elapsed));
       }
     }, 1000);
   }
@@ -1147,7 +1006,7 @@
     elapsed = 0;
     restDurationSeconds = Math.round(restDurationMin * 60);
     updateDisplay();
-    speak("Rest for " + formatAnnouncement(restDurationSeconds));
+    playClips(["restfor"].concat(formatAnnouncementTokens(restDurationSeconds)));
     tickHandle = setInterval(() => {
       elapsed += 1;
       updateDisplay();
@@ -1167,7 +1026,6 @@
 
   function stopSession() {
     clearTick();
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
     setState(STATE_IDLE);
     stateLabelEl.textContent = "Ready";
     clockEl.classList.remove("leadin");

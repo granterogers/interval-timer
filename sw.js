@@ -1,4 +1,13 @@
-const CACHE_NAME = "interval-timer-v5";
+const CACHE_NAME = "interval-timer-v6";
+// Only the default voice's clips are precached up front; the other voices'
+// clips get cached on demand the first time each is fetched (the fetch
+// handler below caches every successful response automatically).
+const DEFAULT_VOICE_CLIPS = (function () {
+  const names = [];
+  for (let i = 0; i <= 59; i++) names.push(String(i));
+  names.push("minute", "minutes", "second", "seconds", "begin", "restfor");
+  return names.map((n) => "./voices/jenny/" + n + ".mp3");
+})();
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,7 +15,7 @@ const ASSETS = [
   "./icon-192.png",
   "./icon-512.png",
   "./icon-180.png"
-];
+].concat(DEFAULT_VOICE_CLIPS);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

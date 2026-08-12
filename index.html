@@ -352,6 +352,12 @@
     font-size: 0.72rem;
     color: var(--muted);
   }
+  .voice-uri {
+    font-size: 0.62rem;
+    color: #56698a;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    word-break: break-all;
+  }
   .voice-option .check {
     flex-shrink: 0;
     color: var(--accent);
@@ -543,7 +549,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.2";
+  const APP_VERSION = "1.5.3";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -912,7 +918,8 @@
     const selected = voice.voiceURI === selectedURI;
     return '<button type="button" class="voice-option' + (selected ? " selected" : "") + '" data-voice="' + escapeHtml(voice.voiceURI) + '">' +
       '<span class="voice-option-text"><span class="voice-name">' + escapeHtml(voice.name) + '</span>' +
-      '<span class="voice-meta">' + escapeHtml(voice.lang || "") + '</span></span>' +
+      '<span class="voice-meta">' + escapeHtml(voice.lang || "") + '</span>' +
+      '<span class="voice-uri">' + escapeHtml(voice.voiceURI || "") + '</span></span>' +
       '<span class="check">✓</span></button>';
   }
 

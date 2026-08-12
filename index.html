@@ -253,9 +253,118 @@
     max-width: 380px;
     margin-top: 10px;
   }
+
+  /* Settings gear + modal */
+  .icon-btn {
+    position: fixed;
+    top: env(safe-area-inset-top, 14px);
+    right: 14px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .icon-btn:active { background: #1e293b; transform: scale(0.94); }
+  .icon-btn svg { width: 22px; height: 22px; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 10, 20, 0.72);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 30;
+  }
+  .modal-panel {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border-radius: 22px 22px 0 0;
+    padding: 20px 20px calc(env(safe-area-inset-bottom, 20px) + 20px);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .modal-header h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  .modal-header .icon-btn {
+    position: static;
+  }
+  .settings-field {
+    margin-bottom: 16px;
+  }
+  .settings-field label {
+    display: block;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+  .settings-field .hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  select#voiceSelect {
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: #0c1526;
+    border: 1px solid #2a3b57;
+    border-radius: 12px;
+    padding: 12px 14px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  #testVoiceBtn {
+    width: 100%;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
+
+<button class="icon-btn" id="settingsBtn" aria-label="Settings" type="button">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"></circle>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+  </svg>
+</button>
+
+<div class="modal-overlay" id="settingsOverlay" style="display:none">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>Settings</h2>
+      <button class="icon-btn" id="closeSettingsBtn" aria-label="Close" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18"></path>
+          <path d="M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="settings-field">
+      <label>Announcement voice</label>
+      <span class="hint">Pick which installed voice reads the numbers</span>
+      <select id="voiceSelect"></select>
+    </div>
+    <button id="testVoiceBtn" class="secondary" type="button">Test voice</button>
+  </div>
+</div>
 
 <h1>Interval Timer</h1>
 
@@ -378,6 +487,11 @@
   const restToggle = document.getElementById("restToggle");
   const restOptions = document.getElementById("restOptions");
   const autoRestartToggle = document.getElementById("autoRestartToggle");
+  const settingsBtn = document.getElementById("settingsBtn");
+  const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+  const settingsOverlay = document.getElementById("settingsOverlay");
+  const voiceSelect = document.getElementById("voiceSelect");
+  const testVoiceBtn = document.getElementById("testVoiceBtn");
 
   // ---------- Persisted settings ----------
   const STORAGE_KEY = "interval-timer-settings-v2";
@@ -397,7 +511,8 @@
         leadInSec: leadInSec,
         restEnabled: restEnabled,
         restDurationMin: restDurationMin,
-        autoRestart: autoRestart
+        autoRestart: autoRestart,
+        voiceURI: userVoicePref
       }));
     } catch (e) {}
   }
@@ -446,6 +561,7 @@
 
   let intervalSec = 5, maxDurationMin = 3, leadInSec = 3;
   let restEnabled = false, restDurationMin = 1, autoRestart = true;
+  let userVoicePref = stored.voiceURI || null;
 
   const intervalStepper = makeStepper({
     containerId: "intervalStepper", displayId: "intervalValueDisplay",
@@ -490,6 +606,15 @@
   autoRestartToggle.addEventListener("change", () => {
     autoRestart = autoRestartToggle.checked;
     saveStoredSettings();
+  });
+
+  // ---------- Settings modal ----------
+  function openSettings() { settingsOverlay.style.display = "flex"; }
+  function closeSettings() { settingsOverlay.style.display = "none"; }
+  settingsBtn.addEventListener("click", openSettings);
+  closeSettingsBtn.addEventListener("click", closeSettings);
+  settingsOverlay.addEventListener("click", (e) => {
+    if (e.target === settingsOverlay) closeSettings();
   });
 
   // ---------- Audio: WebAudio context, unlocked on first tap (iOS-safe) ----------
@@ -561,8 +686,16 @@
   }
 
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume();
+    if (document.visibilityState === "visible") {
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      // iOS Safari's speech engine can go silently unresponsive after the
+      // tab/app has been backgrounded (screen lock, app switch) — nudging it
+      // awake here, and re-reading the voice list in case it was reset,
+      // avoids needing to force-quit and relaunch the app.
+      if (window.speechSynthesis) {
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        populateVoices();
+      }
     }
   });
 
@@ -630,7 +763,7 @@
     noise.start(t0);
   }
 
-  // ---------- Speech: auto-pick one natural-sounding modern female voice ----------
+  // ---------- Speech: pick a voice (user override, else auto-pick a natural one) ----------
   const FEMALE_VOICE_PRIORITY = [
     /Ava/i, /Samantha/i, /Nicky/i, /Allison/i, /Susan/i, /Zoe/i, /Serena/i, /Karen/i,
     /Google US English/i, /Google UK English Female/i,
@@ -639,8 +772,7 @@
   ];
   let chosenVoice = null;
 
-  function pickBestVoice() {
-    const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  function pickBestVoice(voices) {
     if (!voices.length) return null;
     const enVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
     const pool = enVoices.length ? enVoices : voices;
@@ -651,13 +783,61 @@
     return pool[0];
   }
 
+  function resolveVoice(voices) {
+    if (userVoicePref) {
+      const match = voices.find(v => v.voiceURI === userVoicePref);
+      if (match) return match;
+    }
+    return pickBestVoice(voices);
+  }
+
+  function rebuildVoiceSelect(voices) {
+    const previousValue = voiceSelect.value;
+    voiceSelect.innerHTML = "";
+    const autoOption = document.createElement("option");
+    autoOption.value = "";
+    autoOption.textContent = "Automatic (recommended)";
+    voiceSelect.appendChild(autoOption);
+    voices.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v.voiceURI;
+      opt.textContent = v.name + (v.lang ? " — " + v.lang : "");
+      voiceSelect.appendChild(opt);
+    });
+    const wanted = userVoicePref || "";
+    voiceSelect.value = voices.some(v => v.voiceURI === wanted) ? wanted : (previousValue || "");
+  }
+
   function populateVoices() {
-    chosenVoice = pickBestVoice();
+    const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    if (voices.length) chosenVoice = resolveVoice(voices);
+    rebuildVoiceSelect(voices);
   }
   if (window.speechSynthesis) {
     populateVoices();
     window.speechSynthesis.onvoiceschanged = populateVoices;
   }
+
+  voiceSelect.addEventListener("change", () => {
+    userVoicePref = voiceSelect.value || null;
+    saveStoredSettings();
+    const voices = window.speechSynthesis.getVoices();
+    chosenVoice = resolveVoice(voices);
+  });
+
+  testVoiceBtn.addEventListener("click", () => {
+    unlockAudio();
+    speak("This is a test of the selected voice.");
+  });
+
+  // Periodic nudge: iOS Safari's speech engine occasionally goes idle/paused
+  // on its own (especially after the tab was backgrounded) and never comes
+  // back without this kind of poke, previously requiring a force-quit.
+  setInterval(() => {
+    if (window.speechSynthesis && window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+  }, 4000);
 
   function speak(text) {
     if (!window.speechSynthesis) return;
@@ -667,13 +847,31 @@
     // pause it while speaking and resume it right after.
     const resumeLoop = () => { if (silentLoop) silentLoop.play().catch(() => {}); };
     if (silentLoop && !silentLoop.paused) silentLoop.pause();
-    const utter = new SpeechSynthesisUtterance(text);
-    if (chosenVoice) utter.voice = chosenVoice;
-    utter.rate = 0.95;
-    utter.pitch = 1.0;
-    utter.onend = resumeLoop;
-    utter.onerror = resumeLoop;
-    window.speechSynthesis.speak(utter);
+
+    let started = false;
+    function fire(isRetry) {
+      const utter = new SpeechSynthesisUtterance(text);
+      if (chosenVoice) utter.voice = chosenVoice;
+      utter.rate = 0.95;
+      utter.pitch = 1.0;
+      utter.onstart = () => { started = true; };
+      utter.onend = resumeLoop;
+      utter.onerror = resumeLoop;
+      window.speechSynthesis.speak(utter);
+      if (!isRetry) {
+        // iOS occasionally swallows speak() calls silently after the engine
+        // has been idle/backgrounded; if it never actually started, force
+        // one fresh retry instead of leaving the app looking dead until
+        // it's force-quit and relaunched.
+        setTimeout(() => {
+          if (!started && !window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            fire(true);
+          }
+        }, 300);
+      }
+    }
+    fire(false);
   }
 
   function formatAnnouncement(totalSeconds) {

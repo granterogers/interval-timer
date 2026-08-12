@@ -377,9 +377,12 @@
   .voice-group summary::after { content: "\203A"; font-size: 1.1rem; }
   .voice-group[open] summary::after { content: "\2304"; }
   .voice-group .voice-option { padding-left: 24px; }
-  #testVoiceBtn {
-    width: 100%;
-    margin-top: 12px;
+  .version-tag {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--muted);
+    opacity: 0.6;
+    margin-top: 18px;
   }
 </style>
 </head>
@@ -408,7 +411,7 @@
       <p class="voice-tip">For noticeably better quality on iPhone, install a free voice: Settings → Accessibility → Spoken Content → Voices → download an Enhanced or Premium voice, then pick it below.</p>
       <div class="voice-picker" id="voicePicker"></div>
     </div>
-    <button id="testVoiceBtn" class="secondary" type="button">Test voice</button>
+    <div class="version-tag" id="versionTag"></div>
   </div>
 </div>
 
@@ -535,7 +538,13 @@
   const closeSettingsBtn = document.getElementById("closeSettingsBtn");
   const settingsOverlay = document.getElementById("settingsOverlay");
   const voicePicker = document.getElementById("voicePicker");
-  const testVoiceBtn = document.getElementById("testVoiceBtn");
+  const versionTag = document.getElementById("versionTag");
+
+  // Bump the patch number each time this app is pushed to GitHub (per user
+  // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
+  // explicitly called for.
+  const APP_VERSION = "1.5.1";
+  versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
   const STORAGE_KEY = "interval-timer-settings-v2";
@@ -653,7 +662,13 @@
   });
 
   // ---------- Settings modal ----------
-  function openSettings() { settingsOverlay.style.display = "flex"; }
+  function openSettings() {
+    settingsOverlay.style.display = "flex";
+    // Re-read the voice list every time Settings is opened — iOS doesn't
+    // always fire voiceschanged promptly after a new voice finishes
+    // downloading, so this gives the freshest possible snapshot.
+    populateVoices();
+  }
   function closeSettings() { settingsOverlay.style.display = "none"; }
   settingsBtn.addEventListener("click", openSettings);
   closeSettingsBtn.addEventListener("click", closeSettings);
@@ -951,9 +966,6 @@
     chosenVoice = resolveVoice(voices);
     voicePicker.querySelectorAll(".voice-option.selected").forEach((el) => el.classList.remove("selected"));
     btn.classList.add("selected");
-  });
-
-  testVoiceBtn.addEventListener("click", () => {
     unlockAudio();
     speak("This is a test of the selected voice.");
   });
@@ -979,7 +991,9 @@
     let started = false;
     function fire(isRetry) {
       const utter = new SpeechSynthesisUtterance(text);
-      if (chosenVoice) utter.voice = chosenVoice;
+      if (chosenVoice) {
+        try { utter.voice = chosenVoice; } catch (e) { /* fall back to default voice */ }
+      }
       utter.rate = 0.95;
       utter.pitch = 1.0;
       utter.onstart = () => { started = true; };

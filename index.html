@@ -408,7 +408,7 @@
     </div>
     <div class="settings-field">
       <label>Announcement voice</label>
-      <p class="voice-tip">For noticeably better quality on iPhone, install a free voice: Settings → Accessibility → Spoken Content → Voices → download an Enhanced or Premium voice, then pick it below.</p>
+      <p class="voice-tip">For noticeably better quality on iPhone, pick a voice below, then in Settings → Accessibility → Spoken Content → Voices find that same name and download its Enhanced or Premium version — the app will use whichever quality you've set automatically.</p>
       <div class="voice-picker" id="voicePicker"></div>
     </div>
     <div class="version-tag" id="versionTag"></div>
@@ -543,7 +543,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.1";
+  const APP_VERSION = "1.5.2";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -840,18 +840,12 @@
     return NOVELTY_VOICE_NAMES.test((voice.name || "").trim());
   }
 
-  // iOS/macOS expose the extra-cost/downloaded voice quality tier via the
-  // voiceURI (and sometimes the name) rather than a dedicated field.
-  function voiceTier(voice) {
-    const key = ((voice.voiceURI || "") + " " + (voice.name || "")).toLowerCase();
-    if (key.includes("premium")) return 3;
-    if (key.includes("enhanced")) return 2;
-    return 1;
-  }
-
-  function tierLabel(tier) {
-    return tier === 3 ? "Premium" : tier === 2 ? "Enhanced" : "";
-  }
+  // NOTE: iOS does NOT expose which quality tier (Default/Enhanced/Premium)
+  // a voice is set to anywhere in voiceURI or name — confirmed on-device: a
+  // voice set to "Enhanced" in Settings still reports through here with no
+  // distinguishing marker. There is exactly one selectable entry per voice
+  // name; the OS silently renders it at whatever quality you've downloaded
+  // for that name. So there's no reliable signal to sort or label by here.
 
   function detectedLangCode() {
     return ((navigator.language || navigator.userLanguage || "en") + "").split("-")[0].toLowerCase();
@@ -864,13 +858,11 @@
     const localeVoices = pool.filter(v => v.lang && v.lang.toLowerCase().startsWith(detected));
     const enVoices = pool.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
     const candidates = localeVoices.length ? localeVoices : (enVoices.length ? enVoices : pool);
-    const bestTier = Math.max(...candidates.map(voiceTier));
-    const topTierPool = candidates.filter(v => voiceTier(v) === bestTier);
     for (const pattern of FEMALE_VOICE_PRIORITY) {
-      const match = topTierPool.find(v => pattern.test(v.name));
+      const match = candidates.find(v => pattern.test(v.name));
       if (match) return match;
     }
-    return topTierPool[0];
+    return candidates[0];
   }
 
   function resolveVoice(voices) {
@@ -902,7 +894,7 @@
       groups[code].push(v);
     });
     Object.values(groups).forEach((list) => {
-      list.sort((a, b) => voiceTier(b) - voiceTier(a) || a.name.localeCompare(b.name));
+      list.sort((a, b) => a.name.localeCompare(b.name));
     });
     return groups;
   }
@@ -917,12 +909,10 @@
   }
 
   function voiceOptionHTML(voice, selectedURI) {
-    const label = tierLabel(voiceTier(voice));
-    const meta = voice.lang + (label ? " · " + label : "");
     const selected = voice.voiceURI === selectedURI;
     return '<button type="button" class="voice-option' + (selected ? " selected" : "") + '" data-voice="' + escapeHtml(voice.voiceURI) + '">' +
       '<span class="voice-option-text"><span class="voice-name">' + escapeHtml(voice.name) + '</span>' +
-      '<span class="voice-meta">' + escapeHtml(meta) + '</span></span>' +
+      '<span class="voice-meta">' + escapeHtml(voice.lang || "") + '</span></span>' +
       '<span class="check">✓</span></button>';
   }
 

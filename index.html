@@ -549,7 +549,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.3";
+  const APP_VERSION = "1.5.4";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -843,7 +843,26 @@
   let chosenVoice = null;
 
   function isNoveltyVoice(voice) {
-    return NOVELTY_VOICE_NAMES.test((voice.name || "").trim());
+    if (NOVELTY_VOICE_NAMES.test((voice.name || "").trim())) return true;
+    // Confirmed on-device via voiceURI (e.g. "com.apple.eloquence.en-GB.Eddy"):
+    // Eloquence is Apple's old formant-synthesis accessibility engine — fast
+    // and useful for screen-reader power users, but distinctly robotic and
+    // not what anyone wants announcing a workout timer.
+    if (voice.voiceURI && /eloquence/i.test(voice.voiceURI)) return true;
+    return false;
+  }
+
+  // Dedupe by voiceURI — iOS Safari has a known bug where getVoices() can
+  // return the literal same voice more than once (confirmed on-device: two
+  // "Daniel — en-GB" rows with an identical voiceURI, not two different
+  // voices), especially after repeated calls across voiceschanged/reopens.
+  function dedupeVoices(voices) {
+    const seen = new Set();
+    return voices.filter((v) => {
+      if (seen.has(v.voiceURI)) return false;
+      seen.add(v.voiceURI);
+      return true;
+    });
   }
 
   // NOTE: iOS does NOT expose which quality tier (Default/Enhanced/Premium)
@@ -945,7 +964,7 @@
   }
 
   function populateVoices() {
-    const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    const voices = dedupeVoices(window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
     if (voices.length) chosenVoice = resolveVoice(voices);
     rebuildVoicePicker(voices);
   }

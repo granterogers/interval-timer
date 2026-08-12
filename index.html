@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Interval Timer</title>
+<title>Isometric Interval Timer</title>
 
 <!-- iOS "Add to Home Screen" support -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Interval Timer">
+<meta name="apple-mobile-web-app-title" content="Isometric Interval Timer">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-512.png">
 <link rel="manifest" href="manifest.json">
@@ -239,13 +239,6 @@
     margin-top: -4px;
   }
 
-  footer {
-    margin-top: auto;
-    padding-top: 24px;
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-align: center;
-  }
   .unlock-note {
     font-size: 0.8rem;
     color: var(--muted);
@@ -313,27 +306,80 @@
     font-size: 0.95rem;
     margin-bottom: 4px;
   }
-  .settings-field .hint {
-    display: block;
-    font-size: 0.75rem;
+  .voice-tip {
+    font-size: 0.78rem;
     color: var(--muted);
-    margin-bottom: 10px;
+    line-height: 1.45;
+    margin: 0 0 12px;
   }
-  select#voiceSelect {
-    width: 100%;
-    font-family: inherit;
-    font-size: 0.95rem;
-    color: var(--text);
-    background: #0c1526;
+  .voice-picker {
     border: 1px solid #2a3b57;
     border-radius: 12px;
-    padding: 12px 14px;
-    -webkit-appearance: none;
-    appearance: none;
+    overflow: hidden;
+    background: #0c1526;
   }
+  .voice-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    background: transparent;
+    color: var(--text);
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid #182338;
+    text-align: left;
+  }
+  .voice-option:last-child { border-bottom: none; }
+  .voice-option:active { background: #16233c; transform: none; }
+  .voice-option-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .voice-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .voice-option.selected .voice-name { color: var(--accent); }
+  .voice-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .voice-option .check {
+    flex-shrink: 0;
+    color: var(--accent);
+    font-weight: 700;
+    opacity: 0;
+  }
+  .voice-option.selected .check { opacity: 1; }
+  .voice-group summary {
+    padding: 11px 14px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #182338;
+  }
+  .voice-group summary::-webkit-details-marker { display: none; }
+  .voice-group summary::after { content: "\203A"; font-size: 1.1rem; }
+  .voice-group[open] summary::after { content: "\2304"; }
+  .voice-group .voice-option { padding-left: 24px; }
   #testVoiceBtn {
     width: 100%;
-    margin-top: 4px;
+    margin-top: 12px;
   }
 </style>
 </head>
@@ -359,14 +405,14 @@
     </div>
     <div class="settings-field">
       <label>Announcement voice</label>
-      <span class="hint">Pick which installed voice reads the numbers</span>
-      <select id="voiceSelect"></select>
+      <p class="voice-tip">For noticeably better quality on iPhone, install a free voice: Settings → Accessibility → Spoken Content → Voices → download an Enhanced or Premium voice, then pick it below.</p>
+      <div class="voice-picker" id="voicePicker"></div>
     </div>
     <button id="testVoiceBtn" class="secondary" type="button">Test voice</button>
   </div>
 </div>
 
-<h1>Interval Timer</h1>
+<h1>Isometric Interval Timer</h1>
 
 <div class="display">
   <div class="state-label" id="stateLabel">Ready</div>
@@ -461,8 +507,6 @@
 
 <div class="unlock-note" id="unlockNote">Tap Start once to enable sound on this device.</div>
 
-<footer>Works offline once loaded &middot; Add to Home Screen for the full-screen app.</footer>
-
 <!-- Silent looping audio track. iOS Safari silences the Web Audio API
      whenever the phone's ring/silent switch is set to silent, unless the
      page has an active HTML media-element playback session. Playing this
@@ -490,7 +534,7 @@
   const settingsBtn = document.getElementById("settingsBtn");
   const closeSettingsBtn = document.getElementById("closeSettingsBtn");
   const settingsOverlay = document.getElementById("settingsOverlay");
-  const voiceSelect = document.getElementById("voiceSelect");
+  const voicePicker = document.getElementById("voicePicker");
   const testVoiceBtn = document.getElementById("testVoiceBtn");
 
   // ---------- Persisted settings ----------
@@ -770,17 +814,48 @@
     /Microsoft Aria/i, /Microsoft Jenny/i, /Microsoft Zira/i,
     /Female/i
   ];
+  // Apple's built-in novelty/joke voices (Zarvox, Bad News, etc.) — nobody
+  // wants their interval announced by one of these, so they're excluded
+  // outright rather than merely ranked low.
+  const NOVELTY_VOICE_NAMES = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Wobble|Deranged|Good News|Hysterical|Jester|Organ|Pipe Organ|Superstar|Trinoids|Whisper|Zarvox)$/i;
+
   let chosenVoice = null;
 
+  function isNoveltyVoice(voice) {
+    return NOVELTY_VOICE_NAMES.test((voice.name || "").trim());
+  }
+
+  // iOS/macOS expose the extra-cost/downloaded voice quality tier via the
+  // voiceURI (and sometimes the name) rather than a dedicated field.
+  function voiceTier(voice) {
+    const key = ((voice.voiceURI || "") + " " + (voice.name || "")).toLowerCase();
+    if (key.includes("premium")) return 3;
+    if (key.includes("enhanced")) return 2;
+    return 1;
+  }
+
+  function tierLabel(tier) {
+    return tier === 3 ? "Premium" : tier === 2 ? "Enhanced" : "";
+  }
+
+  function detectedLangCode() {
+    return ((navigator.language || navigator.userLanguage || "en") + "").split("-")[0].toLowerCase();
+  }
+
   function pickBestVoice(voices) {
-    if (!voices.length) return null;
-    const enVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
-    const pool = enVoices.length ? enVoices : voices;
+    const pool = voices.filter(v => !isNoveltyVoice(v));
+    if (!pool.length) return null;
+    const detected = detectedLangCode();
+    const localeVoices = pool.filter(v => v.lang && v.lang.toLowerCase().startsWith(detected));
+    const enVoices = pool.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
+    const candidates = localeVoices.length ? localeVoices : (enVoices.length ? enVoices : pool);
+    const bestTier = Math.max(...candidates.map(voiceTier));
+    const topTierPool = candidates.filter(v => voiceTier(v) === bestTier);
     for (const pattern of FEMALE_VOICE_PRIORITY) {
-      const match = pool.find(v => pattern.test(v.name));
+      const match = topTierPool.find(v => pattern.test(v.name));
       if (match) return match;
     }
-    return pool[0];
+    return topTierPool[0];
   }
 
   function resolveVoice(voices) {
@@ -791,38 +866,91 @@
     return pickBestVoice(voices);
   }
 
-  function rebuildVoiceSelect(voices) {
-    const previousValue = voiceSelect.value;
-    voiceSelect.innerHTML = "";
-    const autoOption = document.createElement("option");
-    autoOption.value = "";
-    autoOption.textContent = "Automatic (recommended)";
-    voiceSelect.appendChild(autoOption);
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function languageDisplayName(langCode) {
+    try {
+      const dn = new Intl.DisplayNames([navigator.language || "en"], { type: "language" });
+      return dn.of(langCode) || langCode.toUpperCase();
+    } catch (e) {
+      return langCode.toUpperCase();
+    }
+  }
+
+  function groupVoicesByLanguage(voices) {
+    const groups = {};
     voices.forEach((v) => {
-      const opt = document.createElement("option");
-      opt.value = v.voiceURI;
-      opt.textContent = v.name + (v.lang ? " — " + v.lang : "");
-      voiceSelect.appendChild(opt);
+      const code = (v.lang || "und").split("-")[0].toLowerCase();
+      if (!groups[code]) groups[code] = [];
+      groups[code].push(v);
     });
-    const wanted = userVoicePref || "";
-    voiceSelect.value = voices.some(v => v.voiceURI === wanted) ? wanted : (previousValue || "");
+    Object.values(groups).forEach((list) => {
+      list.sort((a, b) => voiceTier(b) - voiceTier(a) || a.name.localeCompare(b.name));
+    });
+    return groups;
+  }
+
+  function orderedGroupKeys(groups) {
+    const detected = detectedLangCode();
+    const keys = Object.keys(groups).sort((a, b) => languageDisplayName(a).localeCompare(languageDisplayName(b)));
+    const primary = [];
+    if (groups[detected]) primary.push(detected);
+    if (detected !== "en" && groups.en && !primary.includes("en")) primary.push("en");
+    return [...primary, ...keys.filter((k) => !primary.includes(k))];
+  }
+
+  function voiceOptionHTML(voice, selectedURI) {
+    const label = tierLabel(voiceTier(voice));
+    const meta = voice.lang + (label ? " · " + label : "");
+    const selected = voice.voiceURI === selectedURI;
+    return '<button type="button" class="voice-option' + (selected ? " selected" : "") + '" data-voice="' + escapeHtml(voice.voiceURI) + '">' +
+      '<span class="voice-option-text"><span class="voice-name">' + escapeHtml(voice.name) + '</span>' +
+      '<span class="voice-meta">' + escapeHtml(meta) + '</span></span>' +
+      '<span class="check">✓</span></button>';
+  }
+
+  function rebuildVoicePicker(voices) {
+    const pool = voices.filter(v => !isNoveltyVoice(v));
+    const selectedURI = userVoicePref || "";
+    let html = '<button type="button" class="voice-option' + (!userVoicePref ? " selected" : "") + '" data-voice="">' +
+      '<span class="voice-option-text"><span class="voice-name">Automatic (recommended)</span>' +
+      '<span class="voice-meta">Best available voice, picked for you</span></span>' +
+      '<span class="check">✓</span></button>';
+
+    const groups = groupVoicesByLanguage(pool);
+    const order = orderedGroupKeys(groups);
+    order.forEach((code, i) => {
+      const list = groups[code];
+      html += '<details class="voice-group"' + (i === 0 ? " open" : "") + '>' +
+        '<summary>' + escapeHtml(languageDisplayName(code)) + ' <span>(' + list.length + ')</span></summary>' +
+        '<div class="voice-list">' + list.map((v) => voiceOptionHTML(v, selectedURI)).join("") + '</div>' +
+        '</details>';
+    });
+
+    voicePicker.innerHTML = html;
   }
 
   function populateVoices() {
     const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
     if (voices.length) chosenVoice = resolveVoice(voices);
-    rebuildVoiceSelect(voices);
+    rebuildVoicePicker(voices);
   }
   if (window.speechSynthesis) {
     populateVoices();
     window.speechSynthesis.onvoiceschanged = populateVoices;
   }
 
-  voiceSelect.addEventListener("change", () => {
-    userVoicePref = voiceSelect.value || null;
+  voicePicker.addEventListener("click", (e) => {
+    const btn = e.target.closest(".voice-option");
+    if (!btn) return;
+    userVoicePref = btn.dataset.voice || null;
     saveStoredSettings();
-    const voices = window.speechSynthesis.getVoices();
+    const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
     chosenVoice = resolveVoice(voices);
+    voicePicker.querySelectorAll(".voice-option.selected").forEach((el) => el.classList.remove("selected"));
+    btn.classList.add("selected");
   });
 
   testVoiceBtn.addEventListener("click", () => {

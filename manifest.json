@@ -1,6 +1,6 @@
 {
-  "name": "Interval Timer",
-  "short_name": "Interval",
+  "name": "Isometric Interval Timer",
+  "short_name": "Isometric",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

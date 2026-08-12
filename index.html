@@ -543,7 +543,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.5";
+  const APP_VERSION = "1.5.6";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -815,10 +815,14 @@
     { key: "alan", name: "Alan", meta: "British, calm" },
     { key: "norman", name: "Norman", meta: "American, soft" }
   ];
+  // Each clip is a complete "number + unit" phrase recorded as one
+  // continuous utterance (e.g. "forty-five seconds"), not separate word
+  // clips glued together — splicing isolated words sounded stilted because
+  // each one carries its own falling end-of-sentence pitch contour.
   const CLIP_NAMES = (function () {
     const names = [];
-    for (let i = 0; i <= 59; i++) names.push(String(i));
-    names.push("minute", "minutes", "second", "seconds", "begin", "restfor");
+    for (let i = 0; i <= 59; i++) { names.push("sec_" + i); names.push("min_" + i); }
+    names.push("begin", "restfor");
     return names;
   })();
 
@@ -854,16 +858,24 @@
     if (ctx.state === "suspended") ctx.resume();
     const voiceKey = selectedVoiceKey;
     return loadVoiceClips(voiceKey).then(() => {
-      const gap = 0.09; // small natural pause between words
+      const gap = 0.05; // natural pause between phrases (e.g. "Rest for" -> "two minutes")
+      const fade = 0.015; // short crossfade so each clip's edges don't click
       let t = ctx.currentTime + 0.05;
       names.forEach((name) => {
         const buffer = clipCache[voiceKey] && clipCache[voiceKey][name];
         if (!buffer) return;
+        const dur = buffer.duration;
+        const edge = Math.min(fade, dur / 4);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(1, t + edge);
+        g.gain.setValueAtTime(1, t + Math.max(dur - edge, edge));
+        g.gain.linearRampToValueAtTime(0, t + dur);
         const src = ctx.createBufferSource();
         src.buffer = buffer;
-        src.connect(getLoudOutput());
+        src.connect(g).connect(getLoudOutput());
         src.start(t);
-        t += buffer.duration + gap;
+        t += dur + gap;
       });
     });
   }
@@ -888,15 +900,15 @@
     voicePicker.querySelectorAll(".voice-option.selected").forEach((el) => el.classList.remove("selected"));
     btn.classList.add("selected");
     unlockAudio();
-    playClips(["restfor", "1", "minute"]);
+    playClips(["restfor", "min_1"]);
   });
 
   function formatAnnouncementTokens(totalSeconds) {
-    if (totalSeconds < 60) return [String(totalSeconds), totalSeconds === 1 ? "second" : "seconds"];
+    if (totalSeconds < 60) return ["sec_" + totalSeconds];
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
-    const tokens = [String(mins), mins === 1 ? "minute" : "minutes"];
-    if (secs > 0) tokens.push(String(secs), secs === 1 ? "second" : "seconds");
+    const tokens = ["min_" + mins];
+    if (secs > 0) tokens.push("sec_" + secs);
     return tokens;
   }
 

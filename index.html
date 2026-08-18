@@ -543,7 +543,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.7";
+  const APP_VERSION = "1.5.8";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -809,11 +809,7 @@
   // sidestepping both problems entirely.
   const VOICE_CATALOG = [
     { key: "jenny", name: "Jenny", meta: "British, warm — default" },
-    { key: "ljspeech", name: "LJSpeech", meta: "American, clear" },
-    { key: "ryan", name: "Ryan", meta: "American, deep" },
-    { key: "cori", name: "Cori", meta: "British, crisp" },
-    { key: "alan", name: "Alan", meta: "British, calm" },
-    { key: "norman", name: "Norman", meta: "American, soft" }
+    { key: "alan", name: "Alan", meta: "British, calm" }
   ];
   // Each clip is a complete "number + unit" phrase recorded as one
   // continuous utterance (e.g. "forty-five seconds"), not separate word

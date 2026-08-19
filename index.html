@@ -543,7 +543,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.8";
+  const APP_VERSION = "1.5.9";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -730,9 +730,36 @@
     }
   }
 
+  // ---------- Screen wake lock: keep the display on during a session ----------
+  // Without this, iOS auto-locks the screen after a short idle period (no
+  // taps), which kills audio entirely — this is the actual fix for that,
+  // not a background-audio workaround. It only holds while the tab is the
+  // active foreground app; it can't survive the user manually locking the
+  // phone or switching apps, and isn't supported on older iOS versions
+  // (requires iOS 16.4+), in which case this just silently no-ops.
+  let wakeLock = null;
+  async function acquireWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    try {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    } catch (e) { /* e.g. denied in Low Power Mode — nothing more we can do */ }
+  }
+  function releaseWakeLock() {
+    if (wakeLock) {
+      wakeLock.release().catch(() => {});
+      wakeLock = null;
+    }
+  }
+
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      // The OS releases the wake lock whenever the tab is hidden — re-request
+      // it on return if a session is still actively running.
+      if (!wakeLock && state !== STATE_IDLE && state !== STATE_DONE) {
+        acquireWakeLock();
+      }
     }
   });
 
@@ -933,6 +960,11 @@
     restDurationStepper.setEnabled(editable);
     restToggle.disabled = !editable;
     autoRestartToggle.disabled = !editable;
+    if (editable) {
+      releaseWakeLock();
+    } else {
+      acquireWakeLock();
+    }
   }
 
   function updateDisplay() {

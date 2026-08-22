@@ -472,8 +472,7 @@
 
   <div class="field">
     <div>
-      <label>Rest between rounds</label>
-      <span class="hint">counts up after the gong</span>
+      <label>Repeat round</label>
     </div>
     <label class="switch">
       <input type="checkbox" id="restToggle">
@@ -492,17 +491,6 @@
         <div class="step-value" id="restDurationValueDisplay">1</div>
         <button type="button" class="step-btn" data-action="inc" aria-label="Increase">+</button>
       </div>
-    </div>
-
-    <div class="field">
-      <div>
-        <label>Restart round after rest</label>
-        <span class="hint">otherwise it just stops</span>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="autoRestartToggle">
-        <span class="switch-slider"></span>
-      </label>
     </div>
   </div>
 
@@ -533,7 +521,6 @@
   const unlockNote = document.getElementById("unlockNote");
   const restToggle = document.getElementById("restToggle");
   const restOptions = document.getElementById("restOptions");
-  const autoRestartToggle = document.getElementById("autoRestartToggle");
   const settingsBtn = document.getElementById("settingsBtn");
   const closeSettingsBtn = document.getElementById("closeSettingsBtn");
   const settingsOverlay = document.getElementById("settingsOverlay");
@@ -543,7 +530,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.9";
+  const APP_VERSION = "1.5.10";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -564,7 +551,6 @@
         leadInSec: leadInSec,
         restEnabled: restEnabled,
         restDurationMin: restDurationMin,
-        autoRestart: autoRestart,
         voiceKey: selectedVoiceKey
       }));
     } catch (e) {}
@@ -613,7 +599,7 @@
   }
 
   let intervalSec = 5, maxDurationMin = 3, leadInSec = 3;
-  let restEnabled = false, restDurationMin = 1, autoRestart = true;
+  let restEnabled = false, restDurationMin = 1;
 
   const intervalStepper = makeStepper({
     containerId: "intervalStepper", displayId: "intervalValueDisplay",
@@ -645,18 +631,12 @@
   restDurationMin = restDurationStepper.get();
 
   restEnabled = stored.restEnabled === true;
-  autoRestart = stored.autoRestart !== undefined ? stored.autoRestart : true;
   restToggle.checked = restEnabled;
-  autoRestartToggle.checked = autoRestart;
   restOptions.style.display = restEnabled ? "" : "none";
 
   restToggle.addEventListener("change", () => {
     restEnabled = restToggle.checked;
     restOptions.style.display = restEnabled ? "" : "none";
-    saveStoredSettings();
-  });
-  autoRestartToggle.addEventListener("change", () => {
-    autoRestart = autoRestartToggle.checked;
     saveStoredSettings();
   });
 
@@ -959,7 +939,6 @@
     leadInStepper.setEnabled(editable);
     restDurationStepper.setEnabled(editable);
     restToggle.disabled = !editable;
-    autoRestartToggle.disabled = !editable;
     if (editable) {
       releaseWakeLock();
     } else {
@@ -1052,14 +1031,7 @@
       updateDisplay();
       if (elapsed >= restDurationSeconds) {
         clearTick();
-        if (autoRestart) {
-          startSession();
-        } else {
-          setState(STATE_DONE);
-          stateLabelEl.textContent = "Complete";
-          elapsed = 0;
-          updateDisplay();
-        }
+        startSession();
       }
     }, 1000);
   }

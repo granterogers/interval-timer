@@ -82,6 +82,9 @@
     overflow: hidden;
     margin-bottom: 28px;
   }
+  .progress-wrap.hidden {
+    display: none;
+  }
   .progress-bar {
     height: 100%;
     width: 0%;
@@ -124,6 +127,9 @@
     background: var(--panel);
     border-radius: 18px;
     padding: 18px 20px 8px;
+  }
+  .panel.collapsed {
+    padding: 18px 20px;
   }
   .panel h2 {
     font-size: 0.8rem;
@@ -439,7 +445,7 @@
   <div class="clock" id="clock">00:00</div>
 </div>
 
-<div class="progress-wrap">
+<div class="progress-wrap" id="progressWrap">
   <div class="progress-bar" id="progressBar"></div>
 </div>
 
@@ -448,7 +454,7 @@
   <button id="stopBtn" class="danger" disabled>Stop</button>
 </div>
 
-<div class="panel">
+<div class="panel" id="settingsPanel">
   <button type="button" class="panel-header" id="settingsCollapseBtn" aria-expanded="true">
     <h2>Settings</h2>
     <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -549,6 +555,7 @@
   const clockEl = document.getElementById("clock");
   const stateLabelEl = document.getElementById("stateLabel");
   const progressBarEl = document.getElementById("progressBar");
+  const progressWrapEl = document.getElementById("progressWrap");
   const startBtn = document.getElementById("startBtn");
   const stopBtn = document.getElementById("stopBtn");
   const restToggle = document.getElementById("restToggle");
@@ -561,11 +568,12 @@
   const versionTag = document.getElementById("versionTag");
   const settingsCollapseBtn = document.getElementById("settingsCollapseBtn");
   const settingsPanelBody = document.getElementById("settingsPanelBody");
+  const settingsPanelEl = document.getElementById("settingsPanel");
 
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.14";
+  const APP_VERSION = "1.5.15";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -690,6 +698,7 @@
   function applySettingsCollapsed() {
     settingsPanelBody.style.display = settingsCollapsed ? "none" : "";
     settingsCollapseBtn.setAttribute("aria-expanded", settingsCollapsed ? "false" : "true");
+    settingsPanelEl.classList.toggle("collapsed", settingsCollapsed);
   }
   settingsCollapsed = stored.settingsCollapsed === true;
   applySettingsCollapsed();
@@ -1023,6 +1032,7 @@
     restDurationStepper.setEnabled(editable);
     restToggle.disabled = !editable;
     beepModeToggle.disabled = !editable;
+    progressWrapEl.classList.toggle("hidden", editable);
     if (editable) {
       releaseWakeLock();
     } else {

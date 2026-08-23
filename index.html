@@ -43,7 +43,7 @@
     min-height: 100%;
   }
   h1 {
-    font-size: 1.1rem;
+    font-size: 1.32rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--muted);
@@ -71,25 +71,27 @@
   }
   .clock.leadin {
     color: var(--accent-2);
-    font-size: 6rem;
   }
   .progress-wrap {
     width: 100%;
     max-width: 420px;
-    height: 8px;
+    height: 14px;
     background: #1e293b;
     border-radius: 999px;
     overflow: hidden;
     margin-bottom: 28px;
   }
   .progress-wrap.hidden {
-    display: none;
+    opacity: 0;
   }
   .progress-bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    transition: width 0.3s linear;
+    background: linear-gradient(90deg, #22c55e, var(--accent-2));
+    transition: width 0.3s linear, background 0.3s ease;
+  }
+  .progress-bar.resting {
+    background: linear-gradient(90deg, var(--danger), #fb7185);
   }
   .controls {
     display: flex;
@@ -573,7 +575,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.15";
+  const APP_VERSION = "1.5.16";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -1047,6 +1049,7 @@
     const target = state === STATE_RESTING ? restDurationSeconds : maxDurationSeconds;
     const pct = target > 0 ? Math.min(100, (elapsed / target) * 100) : 0;
     progressBarEl.style.width = pct + "%";
+    progressBarEl.classList.toggle("resting", state === STATE_RESTING);
   }
 
   function clearTick() {
@@ -1154,7 +1157,13 @@
   // A stale cached service worker would otherwise keep serving an old
   // version of this app indefinitely. This forces any new deploy to take
   // over immediately and reload the page once.
+  //
+  // On a brand-new install, claim() below hands this already-open page its
+  // very first controller, which fires "controllerchange" too -- reloading
+  // then would wipe out a session someone just started. Only reload when
+  // there was already a controller (a real update replacing an old one).
   if ("serviceWorker" in navigator) {
+    const hadController = !!navigator.serviceWorker.controller;
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("sw.js").then((reg) => {
         reg.addEventListener("updatefound", () => {
@@ -1169,8 +1178,13 @@
       }).catch(() => {});
     });
     let reloaded = false;
+    let skippedFirstClaim = false;
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (reloaded) return;
+      if (!hadController && !skippedFirstClaim) {
+        skippedFirstClaim = true;
+        return;
+      }
       reloaded = true;
       window.location.reload();
     });

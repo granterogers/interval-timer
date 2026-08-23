@@ -39,8 +39,20 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: env(safe-area-inset-top, 20px) 20px calc(env(safe-area-inset-bottom, 20px) + 20px);
+    padding: 0 20px calc(env(safe-area-inset-bottom, 20px) + 20px);
     min-height: 100%;
+  }
+  .top-section {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg);
+    padding-top: env(safe-area-inset-top, 20px);
   }
   h1 {
     font-size: 1.32rem;
@@ -440,20 +452,22 @@
   </div>
 </div>
 
-<h1>Isometric Interval Timer</h1>
+<div class="top-section">
+  <h1>Isometric Interval Timer</h1>
 
-<div class="display">
-  <div class="state-label" id="stateLabel">Ready</div>
-  <div class="clock" id="clock">00:00</div>
-</div>
+  <div class="display">
+    <div class="state-label" id="stateLabel">Ready</div>
+    <div class="clock" id="clock">00:00</div>
+  </div>
 
-<div class="progress-wrap" id="progressWrap">
-  <div class="progress-bar" id="progressBar"></div>
-</div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
 
-<div class="controls">
-  <button id="startBtn">Start</button>
-  <button id="stopBtn" class="danger" disabled>Stop</button>
+  <div class="controls">
+    <button id="startBtn">Start</button>
+    <button id="stopBtn" class="danger" disabled>Stop</button>
+  </div>
 </div>
 
 <div class="panel" id="settingsPanel">
@@ -575,7 +589,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.17";
+  const APP_VERSION = "1.5.18";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -647,6 +661,10 @@
 
   let intervalSec = 5, maxDurationMin = 3, leadInSec = 3;
   let restEnabled = false, restDurationMin = 1;
+  let sessionEditable = true;
+  function updateRestDurationEnabled() {
+    restDurationStepper.setEnabled(sessionEditable && restEnabled);
+  }
   let beepMode = false;
   let settingsCollapsed = false;
 
@@ -679,13 +697,16 @@
   leadInSec = leadInStepper.get();
   restDurationMin = restDurationStepper.get();
 
+  // The rest-duration field always stays visible (just enabled/disabled) so
+  // that toggling "Repeat round" never changes the settings panel's height
+  // and shifts the Start/Stop buttons above it.
   restEnabled = stored.restEnabled === true;
   restToggle.checked = restEnabled;
-  restOptions.style.display = restEnabled ? "" : "none";
+  updateRestDurationEnabled();
 
   restToggle.addEventListener("change", () => {
     restEnabled = restToggle.checked;
-    restOptions.style.display = restEnabled ? "" : "none";
+    updateRestDurationEnabled();
     saveStoredSettings();
   });
 
@@ -1041,12 +1062,13 @@
   function setState(newState) {
     state = newState;
     const editable = (state === STATE_IDLE || state === STATE_DONE);
+    sessionEditable = editable;
     startBtn.disabled = (state === STATE_LEADIN || state === STATE_RUNNING || state === STATE_RESTING);
     stopBtn.disabled = (state === STATE_IDLE || state === STATE_DONE);
     intervalStepper.setEnabled(editable);
     durationStepper.setEnabled(editable);
     leadInStepper.setEnabled(editable);
-    restDurationStepper.setEnabled(editable);
+    updateRestDurationEnabled();
     restToggle.disabled = !editable;
     beepModeToggle.disabled = !editable;
     progressWrapEl.classList.toggle("hidden", editable);

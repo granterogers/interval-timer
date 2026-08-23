@@ -448,6 +448,17 @@
 
   <div class="field">
     <div>
+      <label>Countdown announcements</label>
+      <span class="hint">beep instead of speaking the time</span>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="beepModeToggle">
+      <span class="switch-slider"></span>
+    </label>
+  </div>
+
+  <div class="field">
+    <div>
       <label>Session length</label>
       <span class="hint">minutes — gong plays at the end</span>
     </div>
@@ -521,6 +532,7 @@
   const unlockNote = document.getElementById("unlockNote");
   const restToggle = document.getElementById("restToggle");
   const restOptions = document.getElementById("restOptions");
+  const beepModeToggle = document.getElementById("beepModeToggle");
   const settingsBtn = document.getElementById("settingsBtn");
   const closeSettingsBtn = document.getElementById("closeSettingsBtn");
   const settingsOverlay = document.getElementById("settingsOverlay");
@@ -530,7 +542,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.10";
+  const APP_VERSION = "1.5.11";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -551,7 +563,8 @@
         leadInSec: leadInSec,
         restEnabled: restEnabled,
         restDurationMin: restDurationMin,
-        voiceKey: selectedVoiceKey
+        voiceKey: selectedVoiceKey,
+        beepMode: beepMode
       }));
     } catch (e) {}
   }
@@ -600,6 +613,7 @@
 
   let intervalSec = 5, maxDurationMin = 3, leadInSec = 3;
   let restEnabled = false, restDurationMin = 1;
+  let beepMode = false;
 
   const intervalStepper = makeStepper({
     containerId: "intervalStepper", displayId: "intervalValueDisplay",
@@ -637,6 +651,13 @@
   restToggle.addEventListener("change", () => {
     restEnabled = restToggle.checked;
     restOptions.style.display = restEnabled ? "" : "none";
+    saveStoredSettings();
+  });
+
+  beepMode = stored.beepMode === true;
+  beepModeToggle.checked = beepMode;
+  beepModeToggle.addEventListener("change", () => {
+    beepMode = beepModeToggle.checked;
     saveStoredSettings();
   });
 
@@ -757,6 +778,30 @@
     osc.connect(gain).connect(getLoudOutput());
     osc.start(t0);
     osc.stop(t0 + duration + 0.02);
+  }
+
+  // Distinct digital-style alert for the "beep instead of voice" countdown
+  // mode — a crisp two-tone square-wave chirp, deliberately different in
+  // both timbre (square vs. the lead-in's pure sine) and shape (a rising
+  // two-note blip vs. a single tone) so it's never confused with the
+  // lead-in beeps or the gong.
+  function playIntervalBeep() {
+    const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
+    const t0 = ctx.currentTime;
+    [[1400, 0], [1900, 0.07]].forEach(([freq, when]) => {
+      const t = t0 + when;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+      osc.connect(gain).connect(getLoudOutput());
+      osc.start(t);
+      osc.stop(t + 0.08);
+    });
   }
 
   // Synthesized pleasant gong/bell using layered detuned partials + soft strike transient.
@@ -939,6 +984,7 @@
     leadInStepper.setEnabled(editable);
     restDurationStepper.setEnabled(editable);
     restToggle.disabled = !editable;
+    beepModeToggle.disabled = !editable;
     if (editable) {
       releaseWakeLock();
     } else {
@@ -1013,7 +1059,11 @@
         return;
       }
       if (intervalSec > 0 && elapsed % intervalSec === 0) {
-        playClips(formatAnnouncementTokens(elapsed));
+        if (beepMode) {
+          playIntervalBeep();
+        } else {
+          playClips(formatAnnouncementTokens(elapsed));
+        }
       }
     }, 1000);
   }

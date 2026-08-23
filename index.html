@@ -542,7 +542,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.11";
+  const APP_VERSION = "1.5.12";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -1075,7 +1075,9 @@
     elapsed = 0;
     restDurationSeconds = Math.round(restDurationMin * 60);
     updateDisplay();
-    playClips(["restfor"].concat(formatAnnouncementTokens(restDurationSeconds)));
+    if (!beepMode) {
+      playClips(["restfor"].concat(formatAnnouncementTokens(restDurationSeconds)));
+    }
     tickHandle = setInterval(() => {
       elapsed += 1;
       updateDisplay();

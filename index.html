@@ -448,17 +448,6 @@
 
   <div class="field">
     <div>
-      <label>Countdown announcements</label>
-      <span class="hint">beep instead of speaking the time</span>
-    </div>
-    <label class="switch">
-      <input type="checkbox" id="beepModeToggle">
-      <span class="switch-slider"></span>
-    </label>
-  </div>
-
-  <div class="field">
-    <div>
       <label>Session length</label>
       <span class="hint">minutes — gong plays at the end</span>
     </div>
@@ -479,6 +468,16 @@
       <div class="step-value" id="leadInValueDisplay">3</div>
       <button type="button" class="step-btn" data-action="inc" aria-label="Increase">+</button>
     </div>
+  </div>
+
+  <div class="field">
+    <div>
+      <label>Use sounds instead of voice</label>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="beepModeToggle">
+      <span class="switch-slider"></span>
+    </label>
   </div>
 
   <div class="field">
@@ -542,7 +541,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.12";
+  const APP_VERSION = "1.5.13";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------

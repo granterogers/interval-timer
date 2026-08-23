@@ -131,6 +131,9 @@
     background: var(--danger);
     color: #2a0a0a;
   }
+  #startBtn {
+    background: var(--accent-2);
+  }
   button:disabled {
     opacity: 0.35;
     cursor: default;
@@ -282,6 +285,11 @@
     border-top: 1px solid #22314d;
     padding-top: 18px;
     margin-top: -4px;
+    transition: opacity 0.2s ease;
+  }
+  .rest-options.hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 
   /* Settings gear + modal */
@@ -589,7 +597,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.18";
+  const APP_VERSION = "1.5.19";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -664,6 +672,7 @@
   let sessionEditable = true;
   function updateRestDurationEnabled() {
     restDurationStepper.setEnabled(sessionEditable && restEnabled);
+    restOptions.classList.toggle("hidden", !restEnabled);
   }
   let beepMode = false;
   let settingsCollapsed = false;
@@ -697,9 +706,9 @@
   leadInSec = leadInStepper.get();
   restDurationMin = restDurationStepper.get();
 
-  // The rest-duration field always stays visible (just enabled/disabled) so
-  // that toggling "Repeat round" never changes the settings panel's height
-  // and shifts the Start/Stop buttons above it.
+  // The rest-duration field is hidden (opacity, not display:none) until
+  // "Repeat round" is on, so its space is always reserved and toggling it
+  // never changes the settings panel's height or shifts the buttons above it.
   restEnabled = stored.restEnabled === true;
   restToggle.checked = restEnabled;
   updateRestDurationEnabled();

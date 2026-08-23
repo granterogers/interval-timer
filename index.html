@@ -88,7 +88,7 @@
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #22c55e, var(--accent-2));
-    transition: width 0.3s linear, background 0.3s ease;
+    transition: background 0.3s ease;
   }
   .progress-bar.resting {
     background: linear-gradient(90deg, var(--danger), #fb7185);
@@ -575,7 +575,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.16";
+  const APP_VERSION = "1.5.17";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -1023,6 +1023,21 @@
   let maxDurationSeconds = Math.round(maxDurationMin * 60);
   let restDurationSeconds = Math.round(restDurationMin * 60);
 
+  // ---------- Smooth progress bar ----------
+  // Driven by wall-clock time via requestAnimationFrame instead of the
+  // once-a-second tick, so it glides continuously instead of jumping.
+  let progressPhaseStart = null;
+  let progressPhaseTarget = 0;
+  function animateProgressBar() {
+    if (progressPhaseStart !== null && progressPhaseTarget > 0) {
+      const elapsedSec = (performance.now() - progressPhaseStart) / 1000;
+      const pct = Math.min(100, (elapsedSec / progressPhaseTarget) * 100);
+      progressBarEl.style.width = pct + "%";
+    }
+    requestAnimationFrame(animateProgressBar);
+  }
+  requestAnimationFrame(animateProgressBar);
+
   function setState(newState) {
     state = newState;
     const editable = (state === STATE_IDLE || state === STATE_DONE);
@@ -1046,10 +1061,6 @@
     if (state === STATE_LEADIN) return; // clock shows countdown number separately
     clockEl.classList.remove("leadin");
     clockEl.textContent = formatClock(elapsed);
-    const target = state === STATE_RESTING ? restDurationSeconds : maxDurationSeconds;
-    const pct = target > 0 ? Math.min(100, (elapsed / target) * 100) : 0;
-    progressBarEl.style.width = pct + "%";
-    progressBarEl.classList.toggle("resting", state === STATE_RESTING);
   }
 
   function clearTick() {
@@ -1063,6 +1074,7 @@
 
     maxDurationSeconds = Math.round(maxDurationMin * 60);
     elapsed = 0;
+    progressPhaseStart = null;
     progressBarEl.style.width = "0%";
 
     if (leadInSec > 0) {
@@ -1093,6 +1105,9 @@
     clockEl.classList.remove("leadin");
     elapsed = 0;
     updateDisplay();
+    progressBarEl.classList.remove("resting");
+    progressPhaseTarget = maxDurationSeconds;
+    progressPhaseStart = performance.now();
     playClips(["begin"]);
     tickHandle = setInterval(() => {
       elapsed += 1;
@@ -1125,6 +1140,9 @@
     elapsed = 0;
     restDurationSeconds = Math.round(restDurationMin * 60);
     updateDisplay();
+    progressBarEl.classList.add("resting");
+    progressPhaseTarget = restDurationSeconds;
+    progressPhaseStart = performance.now();
     if (!beepMode) {
       playClips(["restfor"].concat(formatAnnouncementTokens(restDurationSeconds)));
     }
@@ -1145,6 +1163,9 @@
     clockEl.classList.remove("leadin");
     elapsed = 0;
     updateDisplay();
+    progressPhaseStart = null;
+    progressBarEl.style.width = "0%";
+    progressBarEl.classList.remove("resting");
   }
 
   startBtn.addEventListener("click", startSession);

@@ -130,8 +130,33 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
-    margin: 0 0 14px;
+    margin: 0;
     font-weight: 600;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin: 0 0 14px;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    border-radius: 0;
+  }
+  .panel-header:active { transform: none; }
+  .panel-header .chevron {
+    width: 18px;
+    height: 18px;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .panel-header[aria-expanded="false"] .chevron {
+    transform: rotate(-90deg);
+  }
+  .panel-header[aria-expanded="false"] {
+    margin-bottom: 0;
   }
   .field {
     display: flex;
@@ -237,14 +262,6 @@
     border-top: 1px solid #22314d;
     padding-top: 18px;
     margin-top: -4px;
-  }
-
-  .unlock-note {
-    font-size: 0.8rem;
-    color: var(--muted);
-    text-align: center;
-    max-width: 380px;
-    margin-top: 10px;
   }
 
   /* Settings gear + modal */
@@ -432,7 +449,14 @@
 </div>
 
 <div class="panel">
-  <h2>Settings</h2>
+  <button type="button" class="panel-header" id="settingsCollapseBtn" aria-expanded="true">
+    <h2>Settings</h2>
+    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9l6 6 6-6"></path>
+    </svg>
+  </button>
+
+  <div id="settingsPanelBody">
 
   <div class="field">
     <div>
@@ -504,9 +528,8 @@
     </div>
   </div>
 
+  </div>
 </div>
-
-<div class="unlock-note" id="unlockNote">Tap Start once to enable sound on this device.</div>
 
 <!-- Silent looping audio track. iOS Safari silences the Web Audio API
      whenever the phone's ring/silent switch is set to silent, unless the
@@ -528,7 +551,6 @@
   const progressBarEl = document.getElementById("progressBar");
   const startBtn = document.getElementById("startBtn");
   const stopBtn = document.getElementById("stopBtn");
-  const unlockNote = document.getElementById("unlockNote");
   const restToggle = document.getElementById("restToggle");
   const restOptions = document.getElementById("restOptions");
   const beepModeToggle = document.getElementById("beepModeToggle");
@@ -537,11 +559,13 @@
   const settingsOverlay = document.getElementById("settingsOverlay");
   const voicePicker = document.getElementById("voicePicker");
   const versionTag = document.getElementById("versionTag");
+  const settingsCollapseBtn = document.getElementById("settingsCollapseBtn");
+  const settingsPanelBody = document.getElementById("settingsPanelBody");
 
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.13";
+  const APP_VERSION = "1.5.14";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -563,7 +587,8 @@
         restEnabled: restEnabled,
         restDurationMin: restDurationMin,
         voiceKey: selectedVoiceKey,
-        beepMode: beepMode
+        beepMode: beepMode,
+        settingsCollapsed: settingsCollapsed
       }));
     } catch (e) {}
   }
@@ -613,6 +638,7 @@
   let intervalSec = 5, maxDurationMin = 3, leadInSec = 3;
   let restEnabled = false, restDurationMin = 1;
   let beepMode = false;
+  let settingsCollapsed = false;
 
   const intervalStepper = makeStepper({
     containerId: "intervalStepper", displayId: "intervalValueDisplay",
@@ -657,6 +683,19 @@
   beepModeToggle.checked = beepMode;
   beepModeToggle.addEventListener("change", () => {
     beepMode = beepModeToggle.checked;
+    saveStoredSettings();
+  });
+
+  // ---------- Collapsible settings panel ----------
+  function applySettingsCollapsed() {
+    settingsPanelBody.style.display = settingsCollapsed ? "none" : "";
+    settingsCollapseBtn.setAttribute("aria-expanded", settingsCollapsed ? "false" : "true");
+  }
+  settingsCollapsed = stored.settingsCollapsed === true;
+  applySettingsCollapsed();
+  settingsCollapseBtn.addEventListener("click", () => {
+    settingsCollapsed = !settingsCollapsed;
+    applySettingsCollapsed();
     saveStoredSettings();
   });
 
@@ -1009,7 +1048,6 @@
     // whole audio pipeline as unlocked by this user gesture.
     unlockAudio();
 
-    unlockNote.style.display = "none";
     maxDurationSeconds = Math.round(maxDurationMin * 60);
     elapsed = 0;
     progressBarEl.style.width = "0%";

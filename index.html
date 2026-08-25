@@ -558,6 +558,17 @@
     </div>
   </div>
 
+  <div class="field">
+    <div>
+      <label>Enable background audio</label>
+      <span class="hint">survives the screen locking or backgrounding — needs a moment to prepare on Start, and voice/sounds can't switch mid-session while it's on</span>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="backgroundAudioToggle">
+      <span class="switch-slider"></span>
+    </label>
+  </div>
+
   </div>
 </div>
 
@@ -570,6 +581,12 @@
 <audio id="silentLoop" loop playsinline preload="auto" style="display:none">
   <source src="data:audio/wav;base64,UklGRuQSAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YcASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" type="audio/wav">
 </audio>
+
+<!-- Pre-rendered round/rest audio for the "Enable background audio" mode:
+     real HTML media-element playback (unlike Web Audio API scheduling)
+     keeps running when the screen locks or the app is backgrounded. -->
+<audio id="bgRoundAudio" playsinline preload="auto" style="display:none"></audio>
+<audio id="bgRestAudio" playsinline preload="auto" style="display:none"></audio>
 
 <script>
 (function () {
@@ -585,6 +602,9 @@
   const restToggle = document.getElementById("restToggle");
   const restOptions = document.getElementById("restOptions");
   const beepModeToggle = document.getElementById("beepModeToggle");
+  const backgroundAudioToggle = document.getElementById("backgroundAudioToggle");
+  const bgRoundAudioEl = document.getElementById("bgRoundAudio");
+  const bgRestAudioEl = document.getElementById("bgRestAudio");
   const settingsBtn = document.getElementById("settingsBtn");
   const closeSettingsBtn = document.getElementById("closeSettingsBtn");
   const settingsOverlay = document.getElementById("settingsOverlay");
@@ -597,7 +617,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.20";
+  const APP_VERSION = "1.5.21";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -620,7 +640,8 @@
         restDurationMin: restDurationMin,
         voiceKey: selectedVoiceKey,
         beepMode: beepMode,
-        settingsCollapsed: settingsCollapsed
+        settingsCollapsed: settingsCollapsed,
+        backgroundAudioEnabled: backgroundAudioEnabled
       }));
     } catch (e) {}
   }
@@ -675,6 +696,7 @@
     restOptions.classList.toggle("hidden", !restEnabled);
   }
   let beepMode = false;
+  let backgroundAudioEnabled = false;
   let settingsCollapsed = false;
 
   const intervalStepper = makeStepper({
@@ -726,6 +748,13 @@
     saveStoredSettings();
   });
 
+  backgroundAudioEnabled = stored.backgroundAudioEnabled === true;
+  backgroundAudioToggle.checked = backgroundAudioEnabled;
+  backgroundAudioToggle.addEventListener("change", () => {
+    backgroundAudioEnabled = backgroundAudioToggle.checked;
+    saveStoredSettings();
+  });
+
   // ---------- Collapsible settings panel ----------
   function applySettingsCollapsed() {
     settingsPanelBody.style.display = settingsCollapsed ? "none" : "";
@@ -765,23 +794,27 @@
   // Shared loudness stage for beeps/gong: lets us drive the oscillators much
   // harder for volume, while a tanh soft-clip curve keeps the output bounded
   // to [-1, 1] so it saturates warmly instead of hard-clipping/crackling.
+  // Factored out (rather than tied to the live AudioContext) so the same
+  // curve can also be used when pre-rendering audio offline for background
+  // playback.
+  function makeLoudOutput(ctx) {
+    const shaper = ctx.createWaveShaper();
+    const amount = 2.5;
+    const samples = 1024;
+    const curve = new Float32Array(samples);
+    const norm = Math.tanh(amount);
+    for (let i = 0; i < samples; i++) {
+      const x = (i / (samples - 1)) * 2 - 1;
+      curve[i] = Math.tanh(amount * x) / norm;
+    }
+    shaper.curve = curve;
+    shaper.oversample = "4x";
+    shaper.connect(ctx.destination);
+    return shaper;
+  }
   let loudnessShaper = null;
   function getLoudOutput() {
-    const ctx = getCtx();
-    if (!loudnessShaper) {
-      loudnessShaper = ctx.createWaveShaper();
-      const amount = 2.5;
-      const samples = 1024;
-      const curve = new Float32Array(samples);
-      const norm = Math.tanh(amount);
-      for (let i = 0; i < samples; i++) {
-        const x = (i / (samples - 1)) * 2 - 1;
-        curve[i] = Math.tanh(amount * x) / norm;
-      }
-      loudnessShaper.curve = curve;
-      loudnessShaper.oversample = "4x";
-      loudnessShaper.connect(ctx.destination);
-    }
+    if (!loudnessShaper) loudnessShaper = makeLoudOutput(getCtx());
     return loudnessShaper;
   }
 
@@ -840,13 +873,18 @@
       if (!wakeLock && state !== STATE_IDLE && state !== STATE_DONE) {
         acquireWakeLock();
       }
+      if (activeBackgroundAudio && (state === STATE_RUNNING || state === STATE_RESTING)) {
+        resyncBackgroundAudioState();
+      }
     }
   });
 
-  function playBeep(freq = 880, duration = 0.12, when = 0) {
-    const ctx = getCtx();
-    if (ctx.state === "suspended") ctx.resume();
-    const t0 = ctx.currentTime + when;
+  // Each *At(ctx, output, t0, ...) variant schedules onto whatever context
+  // and destination it's given, at an absolute time t0 — this lets the exact
+  // same synthesis code run either live (via the thin wrappers below, which
+  // schedule relative to getCtx().currentTime) or offline into an
+  // OfflineAudioContext when pre-rendering audio for background playback.
+  function playBeepAt(ctx, output, t0, freq = 880, duration = 0.12) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "sine";
@@ -854,9 +892,14 @@
     gain.gain.setValueAtTime(0.0001, t0);
     gain.gain.exponentialRampToValueAtTime(1.6, t0 + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-    osc.connect(gain).connect(getLoudOutput());
+    osc.connect(gain).connect(output);
     osc.start(t0);
     osc.stop(t0 + duration + 0.02);
+  }
+  function playBeep(freq = 880, duration = 0.12, when = 0) {
+    const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
+    playBeepAt(ctx, getLoudOutput(), ctx.currentTime + when, freq, duration);
   }
 
   // Distinct digital-style alert for the "beep instead of voice" countdown
@@ -864,10 +907,7 @@
   // both timbre (square vs. the lead-in's pure sine) and shape (a rising
   // two-note blip vs. a single tone) so it's never confused with the
   // lead-in beeps or the gong.
-  function playIntervalBeep() {
-    const ctx = getCtx();
-    if (ctx.state === "suspended") ctx.resume();
-    const t0 = ctx.currentTime;
+  function playIntervalBeepAt(ctx, output, t0) {
     [[1400, 0], [1900, 0.07]].forEach(([freq, when]) => {
       const t = t0 + when;
       const osc = ctx.createOscillator();
@@ -877,17 +917,19 @@
       gain.gain.setValueAtTime(0.0001, t);
       gain.gain.exponentialRampToValueAtTime(0.35, t + 0.005);
       gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-      osc.connect(gain).connect(getLoudOutput());
+      osc.connect(gain).connect(output);
       osc.start(t);
       osc.stop(t + 0.08);
     });
   }
-
-  // Synthesized pleasant gong/bell using layered detuned partials + soft strike transient.
-  function playGong() {
+  function playIntervalBeep() {
     const ctx = getCtx();
     if (ctx.state === "suspended") ctx.resume();
-    const t0 = ctx.currentTime;
+    playIntervalBeepAt(ctx, getLoudOutput(), ctx.currentTime);
+  }
+
+  // Synthesized pleasant gong/bell using layered detuned partials + soft strike transient.
+  function playGongAt(ctx, output, t0) {
     const masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(0.0001, t0);
     masterGain.gain.exponentialRampToValueAtTime(1.8, t0 + 0.02);
@@ -895,7 +937,7 @@
     const lowpass = ctx.createBiquadFilter();
     lowpass.type = "lowpass";
     lowpass.frequency.value = 3200;
-    masterGain.connect(lowpass).connect(getLoudOutput());
+    masterGain.connect(lowpass).connect(output);
 
     // Bell partials (inharmonic ratios typical of bell/gong timbre)
     const fundamental = 220;
@@ -929,6 +971,11 @@
     noiseGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
     noise.connect(noiseFilter).connect(noiseGain).connect(masterGain);
     noise.start(t0);
+  }
+  function playGong() {
+    const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
+    playGongAt(ctx, getLoudOutput(), ctx.currentTime);
   }
 
   // ---------- Speech: pre-recorded neural-voice clips, no browser TTS ----------
@@ -980,31 +1027,128 @@
     return clipLoadPromises[voiceKey];
   }
 
+  // Schedules a sequence of named clips back-to-back starting at absolute
+  // time t0, returning the time the last clip finishes. Shared between live
+  // playback and offline pre-rendering, same reasoning as the *At()
+  // functions above.
+  function renderClipsAt(ctx, output, voiceKey, names, t0) {
+    const gap = 0.05; // natural pause between phrases (e.g. "Rest for" -> "two minutes")
+    const fade = 0.015; // short crossfade so each clip's edges don't click
+    let t = t0;
+    names.forEach((name) => {
+      const buffer = clipCache[voiceKey] && clipCache[voiceKey][name];
+      if (!buffer) return;
+      const dur = buffer.duration;
+      const edge = Math.min(fade, dur / 4);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(1, t + edge);
+      g.gain.setValueAtTime(1, t + Math.max(dur - edge, edge));
+      g.gain.linearRampToValueAtTime(0, t + dur);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(g).connect(output);
+      src.start(t);
+      t += dur + gap;
+    });
+    return t;
+  }
+
   function playClips(names) {
     const ctx = getCtx();
     if (ctx.state === "suspended") ctx.resume();
     const voiceKey = selectedVoiceKey;
     return loadVoiceClips(voiceKey).then(() => {
-      const gap = 0.05; // natural pause between phrases (e.g. "Rest for" -> "two minutes")
-      const fade = 0.015; // short crossfade so each clip's edges don't click
-      let t = ctx.currentTime + 0.05;
-      names.forEach((name) => {
-        const buffer = clipCache[voiceKey] && clipCache[voiceKey][name];
-        if (!buffer) return;
-        const dur = buffer.duration;
-        const edge = Math.min(fade, dur / 4);
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(1, t + edge);
-        g.gain.setValueAtTime(1, t + Math.max(dur - edge, edge));
-        g.gain.linearRampToValueAtTime(0, t + dur);
-        const src = ctx.createBufferSource();
-        src.buffer = buffer;
-        src.connect(g).connect(getLoudOutput());
-        src.start(t);
-        t += dur + gap;
-      });
+      renderClipsAt(ctx, getLoudOutput(), voiceKey, names, ctx.currentTime + 0.05);
     });
+  }
+
+  // ---------- Background-audio mode: pre-rendered round/rest clips ----------
+  // Encodes a rendered AudioBuffer as a 16-bit PCM WAV Blob, no library
+  // needed — the format is simple enough to write by hand.
+  function audioBufferToWavBlob(buffer) {
+    const numChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const numFrames = buffer.length;
+    const bytesPerSample = 2;
+    const blockAlign = numChannels * bytesPerSample;
+    const dataSize = numFrames * blockAlign;
+    const arrayBuffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(arrayBuffer);
+    function writeString(offset, str) {
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    }
+    writeString(0, "RIFF");
+    view.setUint32(4, 36 + dataSize, true);
+    writeString(8, "WAVE");
+    writeString(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * blockAlign, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bytesPerSample * 8, true);
+    writeString(36, "data");
+    view.setUint32(40, dataSize, true);
+    const channelData = [];
+    for (let ch = 0; ch < numChannels; ch++) channelData.push(buffer.getChannelData(ch));
+    let offset = 44;
+    for (let i = 0; i < numFrames; i++) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        let sample = Math.max(-1, Math.min(1, channelData[ch][i]));
+        sample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+        view.setInt16(offset, sample, true);
+        offset += 2;
+      }
+    }
+    return new Blob([arrayBuffer], { type: "audio/wav" });
+  }
+
+  // Renders one full round (begin clip + every interval announcement/beep +
+  // closing gong) into a single audio file. Settings are locked for the
+  // whole session, so this only needs to happen once — the same file is
+  // replayed every time the round repeats.
+  async function renderRoundAudio(voiceKey, durationSeconds, intervalSecVal, beepModeOn) {
+    await loadVoiceClips(voiceKey);
+    const sampleRate = 44100;
+    // The live engine starts the rest period immediately at the target
+    // duration, letting the gong's ~5.5s decay ring out over the top of it.
+    // Here the round's "ended" event IS the round-to-rest transition, so a
+    // full tail would delay rest by that long; trim it short instead to
+    // keep the two engines' timing close, accepting a slightly shorter gong.
+    const tailSeconds = 1.5;
+    const totalFrames = Math.ceil((durationSeconds + tailSeconds) * sampleRate);
+    const offlineCtx = new OfflineAudioContext(1, totalFrames, sampleRate);
+    const output = makeLoudOutput(offlineCtx);
+    renderClipsAt(offlineCtx, output, voiceKey, ["begin"], 0.02);
+    if (intervalSecVal > 0) {
+      for (let elapsedAt = intervalSecVal; elapsedAt < durationSeconds; elapsedAt += intervalSecVal) {
+        if (beepModeOn) {
+          playIntervalBeepAt(offlineCtx, output, elapsedAt);
+        } else {
+          renderClipsAt(offlineCtx, output, voiceKey, formatAnnouncementTokens(elapsedAt), elapsedAt);
+        }
+      }
+    }
+    playGongAt(offlineCtx, output, durationSeconds);
+    const rendered = await offlineCtx.startRendering();
+    return audioBufferToWavBlob(rendered);
+  }
+
+  // Renders one full rest period (the "Rest for X" announcement, or silence
+  // in beep mode since the round's closing gong already signals the rest).
+  async function renderRestAudio(voiceKey, durationSeconds, beepModeOn) {
+    await loadVoiceClips(voiceKey);
+    const sampleRate = 44100;
+    const totalFrames = Math.max(1, Math.ceil(durationSeconds * sampleRate));
+    const offlineCtx = new OfflineAudioContext(1, totalFrames, sampleRate);
+    if (!beepModeOn) {
+      const output = makeLoudOutput(offlineCtx);
+      renderClipsAt(offlineCtx, output, voiceKey, ["restfor"].concat(formatAnnouncementTokens(durationSeconds)), 0.02);
+    }
+    const rendered = await offlineCtx.startRendering();
+    return audioBufferToWavBlob(rendered);
   }
 
   function renderVoicePicker() {
@@ -1052,6 +1196,12 @@
   let elapsed = 0;
   let maxDurationSeconds = Math.round(maxDurationMin * 60);
   let restDurationSeconds = Math.round(restDurationMin * 60);
+  // Snapshot of backgroundAudioEnabled for the currently-running session --
+  // separate from the persisted setting so a render failure can fall back
+  // to the normal engine for this run alone, without touching the toggle.
+  let activeBackgroundAudio = false;
+  let bgRoundBlobUrl = null;
+  let bgRestBlobUrl = null;
 
   // ---------- Smooth progress bar ----------
   // Driven by wall-clock time via requestAnimationFrame instead of the
@@ -1079,9 +1229,14 @@
     leadInStepper.setEnabled(editable);
     updateRestDurationEnabled();
     restToggle.disabled = !editable;
-    // beepModeToggle stays enabled even mid-session -- switching between
-    // voice and sounds only affects the next announcement, so there's no
-    // reason to block it while a round is running or resting.
+    backgroundAudioToggle.disabled = !editable;
+    // beepModeToggle stays enabled mid-session -- switching between voice
+    // and sounds only affects the next announcement, so there's no reason
+    // to block it while a round is running or resting. The one exception is
+    // background-audio mode: its round/rest audio is pre-rendered once for
+    // the whole session with a fixed voice/beep choice baked in, so
+    // changing it mid-session would desync from what's actually playing.
+    beepModeToggle.disabled = !editable && backgroundAudioEnabled;
     progressWrapEl.classList.toggle("hidden", editable);
     if (editable) {
       releaseWakeLock();
@@ -1100,15 +1255,46 @@
     if (tickHandle) { clearInterval(tickHandle); tickHandle = null; }
   }
 
-  function startSession() {
+  // (Re-)renders the round/rest audio files for background-audio mode. Only
+  // needs to happen once per session, since settings are locked for its
+  // whole duration -- each repeat just replays the same two files.
+  async function prepareBackgroundAudio() {
+    if (bgRoundBlobUrl) { URL.revokeObjectURL(bgRoundBlobUrl); bgRoundBlobUrl = null; }
+    if (bgRestBlobUrl) { URL.revokeObjectURL(bgRestBlobUrl); bgRestBlobUrl = null; }
+    const voiceKey = selectedVoiceKey;
+    const roundBlob = await renderRoundAudio(voiceKey, maxDurationSeconds, intervalSec, beepMode);
+    bgRoundBlobUrl = URL.createObjectURL(roundBlob);
+    bgRoundAudioEl.src = bgRoundBlobUrl;
+    if (restEnabled) {
+      const restBlob = await renderRestAudio(voiceKey, restDurationSeconds, beepMode);
+      bgRestBlobUrl = URL.createObjectURL(restBlob);
+      bgRestAudioEl.src = bgRestBlobUrl;
+    }
+  }
+
+  async function startSession() {
     // Must be the first thing that happens on the click so iOS treats the
     // whole audio pipeline as unlocked by this user gesture.
     unlockAudio();
 
     maxDurationSeconds = Math.round(maxDurationMin * 60);
+    restDurationSeconds = Math.round(restDurationMin * 60);
     elapsed = 0;
     progressPhaseStart = null;
     progressBarEl.style.width = "0%";
+
+    activeBackgroundAudio = backgroundAudioEnabled;
+    if (activeBackgroundAudio) {
+      setState(STATE_LEADIN);
+      stateLabelEl.textContent = "Preparing…";
+      try {
+        await prepareBackgroundAudio();
+      } catch (e) {
+        activeBackgroundAudio = false; // fall back to the normal engine for this run
+      }
+    }
+
+    const beginPhase = activeBackgroundAudio ? beginBackgroundRunning : beginRunning;
 
     if (leadInSec > 0) {
       setState(STATE_LEADIN);
@@ -1124,11 +1310,11 @@
           playBeep(880, 0.12);
         } else {
           clearTick();
-          beginRunning();
+          beginPhase();
         }
       }, 1000);
     } else {
-      beginRunning();
+      beginPhase();
     }
   }
 
@@ -1189,6 +1375,97 @@
     }, 1000);
   }
 
+  // ---------- Background-audio mode playback ----------
+  // Sound comes entirely from the pre-rendered <audio> elements, chained via
+  // their "ended" events -- that's what lets a round or rest period finish
+  // while the screen is locked or the app is backgrounded. The setInterval
+  // tick here only redraws the clock/progress bar while foregrounded; it
+  // never triggers the next phase itself, and just pauses harmlessly if the
+  // tab is backgrounded (the audio keeps going regardless). Repeats skip
+  // the lead-in after the first round, since a beep-based countdown would
+  // itself need the foreground to run.
+  function beginBackgroundRunning() {
+    setState(STATE_RUNNING);
+    stateLabelEl.textContent = "Running";
+    clockEl.classList.remove("leadin");
+    elapsed = 0;
+    updateDisplay();
+    progressBarEl.classList.remove("resting");
+    progressPhaseTarget = maxDurationSeconds;
+    progressPhaseStart = performance.now();
+    bgRestAudioEl.pause();
+    bgRoundAudioEl.currentTime = 0;
+    bgRoundAudioEl.play().catch(() => {});
+    tickHandle = setInterval(() => {
+      elapsed += 1;
+      updateDisplay();
+    }, 1000);
+  }
+
+  function beginBackgroundResting() {
+    setState(STATE_RESTING);
+    stateLabelEl.textContent = "Resting";
+    clockEl.classList.remove("leadin");
+    elapsed = 0;
+    updateDisplay();
+    progressBarEl.classList.add("resting");
+    progressPhaseTarget = restDurationSeconds;
+    progressPhaseStart = performance.now();
+    bgRoundAudioEl.pause();
+    bgRestAudioEl.currentTime = 0;
+    bgRestAudioEl.play().catch(() => {});
+    tickHandle = setInterval(() => {
+      elapsed += 1;
+      updateDisplay();
+    }, 1000);
+  }
+
+  bgRoundAudioEl.addEventListener("ended", () => {
+    if (!activeBackgroundAudio || state !== STATE_RUNNING) return;
+    clearTick();
+    if (restEnabled) {
+      beginBackgroundResting();
+    } else {
+      setState(STATE_DONE);
+      stateLabelEl.textContent = "Complete";
+    }
+  });
+  bgRestAudioEl.addEventListener("ended", () => {
+    if (!activeBackgroundAudio || state !== STATE_RESTING) return;
+    clearTick();
+    beginBackgroundRunning();
+  });
+
+  // Reconcile the UI with reality when the tab regains visibility: while
+  // backgrounded, the setInterval tick above was paused (so the on-screen
+  // clock/progress bar went stale), but the pre-rendered audio kept playing
+  // and may have advanced through part or all of a phase, or into the next
+  // one. Read the true state back from whichever <audio> element is
+  // actually still going.
+  function resyncBackgroundAudioState() {
+    if (!bgRoundAudioEl.paused && !bgRoundAudioEl.ended) {
+      if (state !== STATE_RUNNING) {
+        setState(STATE_RUNNING);
+        stateLabelEl.textContent = "Running";
+        progressBarEl.classList.remove("resting");
+      }
+      progressPhaseTarget = maxDurationSeconds;
+      elapsed = Math.min(maxDurationSeconds, Math.floor(bgRoundAudioEl.currentTime));
+      progressPhaseStart = performance.now() - bgRoundAudioEl.currentTime * 1000;
+      updateDisplay();
+    } else if (!bgRestAudioEl.paused && !bgRestAudioEl.ended) {
+      if (state !== STATE_RESTING) {
+        setState(STATE_RESTING);
+        stateLabelEl.textContent = "Resting";
+        progressBarEl.classList.add("resting");
+      }
+      progressPhaseTarget = restDurationSeconds;
+      elapsed = Math.min(restDurationSeconds, Math.floor(bgRestAudioEl.currentTime));
+      progressPhaseStart = performance.now() - bgRestAudioEl.currentTime * 1000;
+      updateDisplay();
+    }
+  }
+
   function stopSession() {
     clearTick();
     setState(STATE_IDLE);
@@ -1198,6 +1475,8 @@
     updateDisplay();
     progressPhaseStart = null;
     progressBarEl.style.width = "0%";
+    bgRoundAudioEl.pause();
+    bgRestAudioEl.pause();
     progressBarEl.classList.remove("resting");
   }
 

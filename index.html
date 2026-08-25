@@ -597,7 +597,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.19";
+  const APP_VERSION = "1.5.20";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -1079,7 +1079,9 @@
     leadInStepper.setEnabled(editable);
     updateRestDurationEnabled();
     restToggle.disabled = !editable;
-    beepModeToggle.disabled = !editable;
+    // beepModeToggle stays enabled even mid-session -- switching between
+    // voice and sounds only affects the next announcement, so there's no
+    // reason to block it while a round is running or resting.
     progressWrapEl.classList.toggle("hidden", editable);
     if (editable) {
       releaseWakeLock();

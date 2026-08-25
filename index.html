@@ -346,6 +346,12 @@
   .settings-field {
     margin-bottom: 16px;
   }
+  .settings-field .toggle-field {
+    margin-bottom: 8px;
+  }
+  .settings-field .toggle-field label {
+    margin-bottom: 0;
+  }
   .settings-field label {
     display: block;
     font-size: 0.95rem;
@@ -456,6 +462,16 @@
       <p class="voice-tip">These are high-quality neural voices built into the app — no iPhone voice downloads needed. They work fully offline.</p>
       <div class="voice-picker" id="voicePicker"></div>
     </div>
+    <div class="settings-field">
+      <div class="field toggle-field">
+        <label>Enable background audio</label>
+        <label class="switch">
+          <input type="checkbox" id="backgroundAudioToggle">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <p class="voice-tip">Survives the screen locking or the app backgrounding — needs a moment to prepare on Start, and voice/sounds can't switch mid-session while it's on.</p>
+    </div>
     <div class="version-tag" id="versionTag"></div>
   </div>
 </div>
@@ -558,17 +574,6 @@
     </div>
   </div>
 
-  <div class="field">
-    <div>
-      <label>Enable background audio</label>
-      <span class="hint">survives the screen locking or backgrounding — needs a moment to prepare on Start, and voice/sounds can't switch mid-session while it's on</span>
-    </div>
-    <label class="switch">
-      <input type="checkbox" id="backgroundAudioToggle">
-      <span class="switch-slider"></span>
-    </label>
-  </div>
-
   </div>
 </div>
 
@@ -582,11 +587,13 @@
   <source src="data:audio/wav;base64,UklGRuQSAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YcASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" type="audio/wav">
 </audio>
 
-<!-- Pre-rendered round/rest audio for the "Enable background audio" mode:
-     real HTML media-element playback (unlike Web Audio API scheduling)
-     keeps running when the screen locks or the app is backgrounded. -->
-<audio id="bgRoundAudio" playsinline preload="auto" style="display:none"></audio>
-<audio id="bgRestAudio" playsinline preload="auto" style="display:none"></audio>
+<!-- Pre-rendered audio for the "Enable background audio" mode: real HTML
+     media-element playback (unlike Web Audio API scheduling) keeps running
+     when the screen locks or the app is backgrounded. When repeat round is
+     on, the round + rest are rendered as ONE file and this element's native
+     `loop` repeats it forever -- no JS needs to run to trigger each cycle,
+     which is what actually needs to survive backgrounding. -->
+<audio id="bgAudio" playsinline preload="auto" style="display:none"></audio>
 
 <script>
 (function () {
@@ -603,8 +610,7 @@
   const restOptions = document.getElementById("restOptions");
   const beepModeToggle = document.getElementById("beepModeToggle");
   const backgroundAudioToggle = document.getElementById("backgroundAudioToggle");
-  const bgRoundAudioEl = document.getElementById("bgRoundAudio");
-  const bgRestAudioEl = document.getElementById("bgRestAudio");
+  const bgAudioEl = document.getElementById("bgAudio");
   const settingsBtn = document.getElementById("settingsBtn");
   const closeSettingsBtn = document.getElementById("closeSettingsBtn");
   const settingsOverlay = document.getElementById("settingsOverlay");
@@ -617,7 +623,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.21";
+  const APP_VERSION = "1.5.22";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -1105,22 +1111,29 @@
     return new Blob([arrayBuffer], { type: "audio/wav" });
   }
 
-  // Renders one full round (begin clip + every interval announcement/beep +
-  // closing gong) into a single audio file. Settings are locked for the
-  // whole session, so this only needs to happen once — the same file is
-  // replayed every time the round repeats.
-  async function renderRoundAudio(voiceKey, durationSeconds, intervalSecVal, beepModeOn) {
+  // Renders the round (begin clip + every interval announcement/beep +
+  // closing gong), and -- if repeat round is on -- the rest period right
+  // after it in the SAME file, so the <audio> element's native `loop` can
+  // repeat the whole cycle forever with no JS involved. That's the point:
+  // an earlier version used two separate files chained by starting a new
+  // .play() from each other's "ended" handler, which turned out not to
+  // reliably restart while the app was genuinely backgrounded -- native
+  // looping doesn't have that problem, since the browser/OS handles the
+  // repeat at the media layer, not via a JS callback.
+  async function renderBackgroundCycleAudio(voiceKey, durationSeconds, intervalSecVal, beepModeOn, restEnabledVal, restSeconds) {
     await loadVoiceClips(voiceKey);
     const sampleRate = 44100;
     // The live engine starts the rest period immediately at the target
     // duration, letting the gong's ~5.5s decay ring out over the top of it.
-    // Here the round's "ended" event IS the round-to-rest transition, so a
-    // full tail would delay rest by that long; trim it short instead to
-    // keep the two engines' timing close, accepting a slightly shorter gong.
+    // Here the gong has to fit before the rest segment starts, so trim it
+    // short instead of the full length, accepting a slightly shorter gong.
     const tailSeconds = 1.5;
-    const totalFrames = Math.ceil((durationSeconds + tailSeconds) * sampleRate);
+    const roundSegmentSeconds = durationSeconds + tailSeconds;
+    const cycleSeconds = restEnabledVal ? roundSegmentSeconds + restSeconds : roundSegmentSeconds;
+    const totalFrames = Math.max(1, Math.ceil(cycleSeconds * sampleRate));
     const offlineCtx = new OfflineAudioContext(1, totalFrames, sampleRate);
     const output = makeLoudOutput(offlineCtx);
+
     renderClipsAt(offlineCtx, output, voiceKey, ["begin"], 0.02);
     if (intervalSecVal > 0) {
       for (let elapsedAt = intervalSecVal; elapsedAt < durationSeconds; elapsedAt += intervalSecVal) {
@@ -1132,23 +1145,13 @@
       }
     }
     playGongAt(offlineCtx, output, durationSeconds);
-    const rendered = await offlineCtx.startRendering();
-    return audioBufferToWavBlob(rendered);
-  }
 
-  // Renders one full rest period (the "Rest for X" announcement, or silence
-  // in beep mode since the round's closing gong already signals the rest).
-  async function renderRestAudio(voiceKey, durationSeconds, beepModeOn) {
-    await loadVoiceClips(voiceKey);
-    const sampleRate = 44100;
-    const totalFrames = Math.max(1, Math.ceil(durationSeconds * sampleRate));
-    const offlineCtx = new OfflineAudioContext(1, totalFrames, sampleRate);
-    if (!beepModeOn) {
-      const output = makeLoudOutput(offlineCtx);
-      renderClipsAt(offlineCtx, output, voiceKey, ["restfor"].concat(formatAnnouncementTokens(durationSeconds)), 0.02);
+    if (restEnabledVal && !beepModeOn) {
+      renderClipsAt(offlineCtx, output, voiceKey, ["restfor"].concat(formatAnnouncementTokens(restSeconds)), roundSegmentSeconds + 0.02);
     }
+
     const rendered = await offlineCtx.startRendering();
-    return audioBufferToWavBlob(rendered);
+    return { blob: audioBufferToWavBlob(rendered), roundSegmentSeconds, cycleSeconds };
   }
 
   function renderVoicePicker() {
@@ -1200,8 +1203,9 @@
   // separate from the persisted setting so a render failure can fall back
   // to the normal engine for this run alone, without touching the toggle.
   let activeBackgroundAudio = false;
-  let bgRoundBlobUrl = null;
-  let bgRestBlobUrl = null;
+  let bgAudioBlobUrl = null;
+  let bgRoundSegmentSeconds = 0; // round duration + gong tail baked into the file
+  let bgCycleSeconds = 0;        // bgRoundSegmentSeconds + rest duration, when repeating
 
   // ---------- Smooth progress bar ----------
   // Driven by wall-clock time via requestAnimationFrame instead of the
@@ -1259,17 +1263,16 @@
   // needs to happen once per session, since settings are locked for its
   // whole duration -- each repeat just replays the same two files.
   async function prepareBackgroundAudio() {
-    if (bgRoundBlobUrl) { URL.revokeObjectURL(bgRoundBlobUrl); bgRoundBlobUrl = null; }
-    if (bgRestBlobUrl) { URL.revokeObjectURL(bgRestBlobUrl); bgRestBlobUrl = null; }
+    if (bgAudioBlobUrl) { URL.revokeObjectURL(bgAudioBlobUrl); bgAudioBlobUrl = null; }
     const voiceKey = selectedVoiceKey;
-    const roundBlob = await renderRoundAudio(voiceKey, maxDurationSeconds, intervalSec, beepMode);
-    bgRoundBlobUrl = URL.createObjectURL(roundBlob);
-    bgRoundAudioEl.src = bgRoundBlobUrl;
-    if (restEnabled) {
-      const restBlob = await renderRestAudio(voiceKey, restDurationSeconds, beepMode);
-      bgRestBlobUrl = URL.createObjectURL(restBlob);
-      bgRestAudioEl.src = bgRestBlobUrl;
-    }
+    const result = await renderBackgroundCycleAudio(voiceKey, maxDurationSeconds, intervalSec, beepMode, restEnabled, restDurationSeconds);
+    bgAudioBlobUrl = URL.createObjectURL(result.blob);
+    bgAudioEl.src = bgAudioBlobUrl;
+    // Repeats are handled entirely by native looping -- see the note on the
+    // <audio> element above for why that's the whole point of this design.
+    bgAudioEl.loop = restEnabled;
+    bgRoundSegmentSeconds = result.roundSegmentSeconds;
+    bgCycleSeconds = result.cycleSeconds;
   }
 
   async function startSession() {
@@ -1294,7 +1297,7 @@
       }
     }
 
-    const beginPhase = activeBackgroundAudio ? beginBackgroundRunning : beginRunning;
+    const beginPhase = activeBackgroundAudio ? beginBackgroundPlayback : beginRunning;
 
     if (leadInSec > 0) {
       setState(STATE_LEADIN);
@@ -1376,15 +1379,17 @@
   }
 
   // ---------- Background-audio mode playback ----------
-  // Sound comes entirely from the pre-rendered <audio> elements, chained via
-  // their "ended" events -- that's what lets a round or rest period finish
-  // while the screen is locked or the app is backgrounded. The setInterval
-  // tick here only redraws the clock/progress bar while foregrounded; it
-  // never triggers the next phase itself, and just pauses harmlessly if the
-  // tab is backgrounded (the audio keeps going regardless). Repeats skip
-  // the lead-in after the first round, since a beep-based countdown would
-  // itself need the foreground to run.
-  function beginBackgroundRunning() {
+  // Sound comes entirely from the pre-rendered <audio> element. When repeat
+  // round is on, its native `loop` repeats the whole round+rest cycle
+  // forever with no JS needed to trigger each repeat -- that's what
+  // actually needs to survive the screen locking or the app being
+  // backgrounded. The setInterval tick here only redraws the clock/progress
+  // bar while foregrounded, by reading the audio's own playback position;
+  // it just pauses harmlessly if the tab is backgrounded (the looping audio
+  // keeps going regardless, with nothing to resync until we come back).
+  // Repeats skip the lead-in after the first round, since a beep-based
+  // countdown would itself need the foreground to run.
+  function beginBackgroundPlayback() {
     setState(STATE_RUNNING);
     stateLabelEl.textContent = "Running";
     clockEl.classList.remove("leadin");
@@ -1393,77 +1398,63 @@
     progressBarEl.classList.remove("resting");
     progressPhaseTarget = maxDurationSeconds;
     progressPhaseStart = performance.now();
-    bgRestAudioEl.pause();
-    bgRoundAudioEl.currentTime = 0;
-    bgRoundAudioEl.play().catch(() => {});
+    bgAudioEl.currentTime = 0;
+    bgAudioEl.play().catch(() => {});
     tickHandle = setInterval(() => {
-      elapsed += 1;
-      updateDisplay();
+      applyBackgroundCyclePosition(bgAudioEl.currentTime);
     }, 1000);
   }
 
-  function beginBackgroundResting() {
-    setState(STATE_RESTING);
-    stateLabelEl.textContent = "Resting";
-    clockEl.classList.remove("leadin");
-    elapsed = 0;
-    updateDisplay();
-    progressBarEl.classList.add("resting");
-    progressPhaseTarget = restDurationSeconds;
-    progressPhaseStart = performance.now();
-    bgRoundAudioEl.pause();
-    bgRestAudioEl.currentTime = 0;
-    bgRestAudioEl.play().catch(() => {});
-    tickHandle = setInterval(() => {
-      elapsed += 1;
-      updateDisplay();
-    }, 1000);
-  }
-
-  bgRoundAudioEl.addEventListener("ended", () => {
-    if (!activeBackgroundAudio || state !== STATE_RUNNING) return;
-    clearTick();
+  // Figures out which phase (running/resting) and how far into it the audio
+  // currently is, from its raw playback position alone, and updates the
+  // on-screen state to match. Used both by the foreground tick and by the
+  // visibility-resync below -- there's only one audio position to read, so
+  // both can share the same math instead of tracking state separately.
+  function applyBackgroundCyclePosition(t) {
+    let isResting, phaseElapsed;
     if (restEnabled) {
-      beginBackgroundResting();
+      const tMod = t % bgCycleSeconds;
+      isResting = tMod >= bgRoundSegmentSeconds;
+      phaseElapsed = isResting
+        ? Math.min(restDurationSeconds, Math.floor(tMod - bgRoundSegmentSeconds))
+        : Math.min(maxDurationSeconds, Math.floor(tMod));
     } else {
-      setState(STATE_DONE);
-      stateLabelEl.textContent = "Complete";
+      isResting = false;
+      phaseElapsed = Math.min(maxDurationSeconds, Math.floor(t));
     }
-  });
-  bgRestAudioEl.addEventListener("ended", () => {
-    if (!activeBackgroundAudio || state !== STATE_RESTING) return;
+    if (isResting !== (state === STATE_RESTING)) {
+      if (isResting) {
+        setState(STATE_RESTING);
+        stateLabelEl.textContent = "Resting";
+        progressBarEl.classList.add("resting");
+        progressPhaseTarget = restDurationSeconds;
+      } else {
+        setState(STATE_RUNNING);
+        stateLabelEl.textContent = "Running";
+        progressBarEl.classList.remove("resting");
+        progressPhaseTarget = maxDurationSeconds;
+      }
+    }
+    progressPhaseStart = performance.now() - phaseElapsed * 1000;
+    elapsed = phaseElapsed;
+    updateDisplay();
+  }
+
+  // A non-repeating background session doesn't loop, so it actually fires
+  // "ended" once the round (and its gong tail) finishes.
+  bgAudioEl.addEventListener("ended", () => {
+    if (!activeBackgroundAudio || bgAudioEl.loop || state !== STATE_RUNNING) return;
     clearTick();
-    beginBackgroundRunning();
+    setState(STATE_DONE);
+    stateLabelEl.textContent = "Complete";
   });
 
   // Reconcile the UI with reality when the tab regains visibility: while
   // backgrounded, the setInterval tick above was paused (so the on-screen
-  // clock/progress bar went stale), but the pre-rendered audio kept playing
-  // and may have advanced through part or all of a phase, or into the next
-  // one. Read the true state back from whichever <audio> element is
-  // actually still going.
+  // clock/progress bar went stale), but the looping audio kept going and
+  // may have advanced through part or all of a phase, or several cycles.
   function resyncBackgroundAudioState() {
-    if (!bgRoundAudioEl.paused && !bgRoundAudioEl.ended) {
-      if (state !== STATE_RUNNING) {
-        setState(STATE_RUNNING);
-        stateLabelEl.textContent = "Running";
-        progressBarEl.classList.remove("resting");
-      }
-      progressPhaseTarget = maxDurationSeconds;
-      elapsed = Math.min(maxDurationSeconds, Math.floor(bgRoundAudioEl.currentTime));
-      progressPhaseStart = performance.now() - bgRoundAudioEl.currentTime * 1000;
-      updateDisplay();
-    } else if (!bgRestAudioEl.paused && !bgRestAudioEl.ended) {
-      if (state !== STATE_RESTING) {
-        setState(STATE_RESTING);
-        stateLabelEl.textContent = "Resting";
-        progressBarEl.classList.add("resting");
-      }
-      progressPhaseTarget = restDurationSeconds;
-      elapsed = Math.min(restDurationSeconds, Math.floor(bgRestAudioEl.currentTime));
-      progressPhaseStart = performance.now() - bgRestAudioEl.currentTime * 1000;
-      updateDisplay();
-    }
+    applyBackgroundCyclePosition(bgAudioEl.currentTime);
   }
 
   function stopSession() {
@@ -1475,8 +1466,7 @@
     updateDisplay();
     progressPhaseStart = null;
     progressBarEl.style.width = "0%";
-    bgRoundAudioEl.pause();
-    bgRestAudioEl.pause();
+    bgAudioEl.pause();
     progressBarEl.classList.remove("resting");
   }
 

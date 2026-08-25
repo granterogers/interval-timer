@@ -54,12 +54,20 @@
     background: var(--bg);
     padding-top: env(safe-area-inset-top, 20px);
   }
+  .header-row {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 12px 0 20px;
+  }
   h1 {
     font-size: 1.32rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--muted);
-    margin: 12px 0 20px;
+    margin: 0;
     text-transform: uppercase;
   }
   .display {
@@ -294,9 +302,6 @@
 
   /* Settings gear + modal */
   .icon-btn {
-    position: fixed;
-    top: env(safe-area-inset-top, 14px);
-    right: 14px;
     width: 40px;
     height: 40px;
     padding: 0;
@@ -306,10 +311,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 20;
   }
   .icon-btn:active { background: #1e293b; transform: scale(0.94); }
   .icon-btn svg { width: 22px; height: 22px; }
+  /* Positioned within the header row (next to the h1) rather than pinned to
+     the viewport corner, so it always lines up with the title regardless of
+     screen width, and moving it can't shift the title's centered position. */
+  .header-row .icon-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .header-row .icon-btn:active {
+    transform: translateY(-50%) scale(0.94);
+  }
 
   .modal-overlay {
     position: fixed;
@@ -339,9 +355,6 @@
     font-size: 1rem;
     font-weight: 700;
     margin: 0;
-  }
-  .modal-header .icon-btn {
-    position: static;
   }
   .settings-field {
     margin-bottom: 16px;
@@ -439,13 +452,6 @@
 </head>
 <body>
 
-<button class="icon-btn" id="settingsBtn" aria-label="Settings" type="button">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="3"></circle>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-  </svg>
-</button>
-
 <div class="modal-overlay" id="settingsOverlay" style="display:none">
   <div class="modal-panel">
     <div class="modal-header">
@@ -477,7 +483,15 @@
 </div>
 
 <div class="top-section">
-  <h1>Isometric Interval Timer</h1>
+  <div class="header-row">
+    <h1>Isometric Interval Timer</h1>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </div>
 
   <div class="display">
     <div class="state-label" id="stateLabel">Ready</div>
@@ -623,7 +637,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.22";
+  const APP_VERSION = "1.5.23";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -1111,16 +1125,19 @@
     return new Blob([arrayBuffer], { type: "audio/wav" });
   }
 
-  // Renders the round (begin clip + every interval announcement/beep +
-  // closing gong), and -- if repeat round is on -- the rest period right
-  // after it in the SAME file, so the <audio> element's native `loop` can
-  // repeat the whole cycle forever with no JS involved. That's the point:
-  // an earlier version used two separate files chained by starting a new
-  // .play() from each other's "ended" handler, which turned out not to
-  // reliably restart while the app was genuinely backgrounded -- native
-  // looping doesn't have that problem, since the browser/OS handles the
-  // repeat at the media layer, not via a JS callback.
-  async function renderBackgroundCycleAudio(voiceKey, durationSeconds, intervalSecVal, beepModeOn, restEnabledVal, restSeconds) {
+  // Renders the lead-in countdown beeps + round (begin clip + every interval
+  // announcement/beep + closing gong), and -- if repeat round is on -- the
+  // rest period right after it in the SAME file, so the <audio> element's
+  // native `loop` can repeat the whole cycle forever with no JS involved.
+  // That's the point: an earlier version used two separate files chained by
+  // starting a new .play() from each other's "ended" handler, which turned
+  // out not to reliably restart while the app was genuinely backgrounded --
+  // native looping doesn't have that problem, since the browser/OS handles
+  // the repeat at the media layer, not via a JS callback. Baking the lead-in
+  // into the front of the loop (rather than only playing it live once,
+  // before the file starts) is what makes every repeat -- not just the
+  // first -- get its countdown beeps, again with no JS needed to trigger it.
+  async function renderBackgroundCycleAudio(voiceKey, durationSeconds, intervalSecVal, beepModeOn, restEnabledVal, restSeconds, leadInSecVal) {
     await loadVoiceClips(voiceKey);
     const sampleRate = 44100;
     // The live engine starts the rest period immediately at the target
@@ -1128,30 +1145,36 @@
     // Here the gong has to fit before the rest segment starts, so trim it
     // short instead of the full length, accepting a slightly shorter gong.
     const tailSeconds = 1.5;
-    const roundSegmentSeconds = durationSeconds + tailSeconds;
+    const leadInSeconds = leadInSecVal;
+    const roundSegmentSeconds = leadInSeconds + durationSeconds + tailSeconds;
     const cycleSeconds = restEnabledVal ? roundSegmentSeconds + restSeconds : roundSegmentSeconds;
     const totalFrames = Math.max(1, Math.ceil(cycleSeconds * sampleRate));
     const offlineCtx = new OfflineAudioContext(1, totalFrames, sampleRate);
     const output = makeLoudOutput(offlineCtx);
 
-    renderClipsAt(offlineCtx, output, voiceKey, ["begin"], 0.02);
+    // One beep per second, same cadence/tone as the live pre-start countdown.
+    for (let i = 0; i < leadInSeconds; i++) {
+      playBeepAt(offlineCtx, output, i, 880, 0.12);
+    }
+
+    renderClipsAt(offlineCtx, output, voiceKey, ["begin"], leadInSeconds + 0.02);
     if (intervalSecVal > 0) {
       for (let elapsedAt = intervalSecVal; elapsedAt < durationSeconds; elapsedAt += intervalSecVal) {
         if (beepModeOn) {
-          playIntervalBeepAt(offlineCtx, output, elapsedAt);
+          playIntervalBeepAt(offlineCtx, output, leadInSeconds + elapsedAt);
         } else {
-          renderClipsAt(offlineCtx, output, voiceKey, formatAnnouncementTokens(elapsedAt), elapsedAt);
+          renderClipsAt(offlineCtx, output, voiceKey, formatAnnouncementTokens(elapsedAt), leadInSeconds + elapsedAt);
         }
       }
     }
-    playGongAt(offlineCtx, output, durationSeconds);
+    playGongAt(offlineCtx, output, leadInSeconds + durationSeconds);
 
     if (restEnabledVal && !beepModeOn) {
       renderClipsAt(offlineCtx, output, voiceKey, ["restfor"].concat(formatAnnouncementTokens(restSeconds)), roundSegmentSeconds + 0.02);
     }
 
     const rendered = await offlineCtx.startRendering();
-    return { blob: audioBufferToWavBlob(rendered), roundSegmentSeconds, cycleSeconds };
+    return { blob: audioBufferToWavBlob(rendered), leadInSeconds, roundSegmentSeconds, cycleSeconds };
   }
 
   function renderVoicePicker() {
@@ -1204,7 +1227,8 @@
   // to the normal engine for this run alone, without touching the toggle.
   let activeBackgroundAudio = false;
   let bgAudioBlobUrl = null;
-  let bgRoundSegmentSeconds = 0; // round duration + gong tail baked into the file
+  let bgLeadInSeconds = 0;       // lead-in beeps baked into the start of every cycle
+  let bgRoundSegmentSeconds = 0; // lead-in + round duration + gong tail baked into the file
   let bgCycleSeconds = 0;        // bgRoundSegmentSeconds + rest duration, when repeating
 
   // ---------- Smooth progress bar ----------
@@ -1265,12 +1289,13 @@
   async function prepareBackgroundAudio() {
     if (bgAudioBlobUrl) { URL.revokeObjectURL(bgAudioBlobUrl); bgAudioBlobUrl = null; }
     const voiceKey = selectedVoiceKey;
-    const result = await renderBackgroundCycleAudio(voiceKey, maxDurationSeconds, intervalSec, beepMode, restEnabled, restDurationSeconds);
+    const result = await renderBackgroundCycleAudio(voiceKey, maxDurationSeconds, intervalSec, beepMode, restEnabled, restDurationSeconds, leadInSec);
     bgAudioBlobUrl = URL.createObjectURL(result.blob);
     bgAudioEl.src = bgAudioBlobUrl;
     // Repeats are handled entirely by native looping -- see the note on the
     // <audio> element above for why that's the whole point of this design.
     bgAudioEl.loop = restEnabled;
+    bgLeadInSeconds = result.leadInSeconds;
     bgRoundSegmentSeconds = result.roundSegmentSeconds;
     bgCycleSeconds = result.cycleSeconds;
   }
@@ -1297,7 +1322,15 @@
       }
     }
 
-    const beginPhase = activeBackgroundAudio ? beginBackgroundPlayback : beginRunning;
+    // Background-audio mode bakes its own lead-in beeps into the front of
+    // the rendered cycle (see renderBackgroundCycleAudio), so every repeat
+    // gets a countdown automatically via the native loop -- no separate
+    // live countdown needed here, and none would survive a locked screen
+    // anyway on rounds after the first.
+    if (activeBackgroundAudio) {
+      beginBackgroundPlayback();
+      return;
+    }
 
     if (leadInSec > 0) {
       setState(STATE_LEADIN);
@@ -1313,11 +1346,11 @@
           playBeep(880, 0.12);
         } else {
           clearTick();
-          beginPhase();
+          beginRunning();
         }
       }, 1000);
     } else {
-      beginPhase();
+      beginRunning();
     }
   }
 
@@ -1380,64 +1413,74 @@
 
   // ---------- Background-audio mode playback ----------
   // Sound comes entirely from the pre-rendered <audio> element. When repeat
-  // round is on, its native `loop` repeats the whole round+rest cycle
-  // forever with no JS needed to trigger each repeat -- that's what
+  // round is on, its native `loop` repeats the whole lead-in+round+rest
+  // cycle forever with no JS needed to trigger each repeat -- that's what
   // actually needs to survive the screen locking or the app being
   // backgrounded. The setInterval tick here only redraws the clock/progress
   // bar while foregrounded, by reading the audio's own playback position;
   // it just pauses harmlessly if the tab is backgrounded (the looping audio
   // keeps going regardless, with nothing to resync until we come back).
-  // Repeats skip the lead-in after the first round, since a beep-based
-  // countdown would itself need the foreground to run.
   function beginBackgroundPlayback() {
-    setState(STATE_RUNNING);
-    stateLabelEl.textContent = "Running";
-    clockEl.classList.remove("leadin");
     elapsed = 0;
-    updateDisplay();
-    progressBarEl.classList.remove("resting");
-    progressPhaseTarget = maxDurationSeconds;
-    progressPhaseStart = performance.now();
+    progressBarEl.style.width = "0%";
     bgAudioEl.currentTime = 0;
     bgAudioEl.play().catch(() => {});
+    // Force applyBackgroundCyclePosition below to run its phase-entry setup
+    // (label/clock/progress-bar) even though `state` is already STATE_LEADIN
+    // from the "Preparing…" step just before this.
+    state = STATE_IDLE;
+    applyBackgroundCyclePosition(0);
     tickHandle = setInterval(() => {
       applyBackgroundCyclePosition(bgAudioEl.currentTime);
     }, 1000);
   }
 
-  // Figures out which phase (running/resting) and how far into it the audio
-  // currently is, from its raw playback position alone, and updates the
-  // on-screen state to match. Used both by the foreground tick and by the
-  // visibility-resync below -- there's only one audio position to read, so
-  // both can share the same math instead of tracking state separately.
+  // Figures out which phase (leadin/running/resting) and how far into it the
+  // audio currently is, from its raw playback position alone, and updates
+  // the on-screen state to match. Used by the foreground tick, by the
+  // visibility-resync below, and to set up the very first frame of playback
+  // -- there's only one audio position to read, so all three can share the
+  // same math instead of tracking state separately.
   function applyBackgroundCyclePosition(t) {
-    let isResting, phaseElapsed;
-    if (restEnabled) {
-      const tMod = t % bgCycleSeconds;
-      isResting = tMod >= bgRoundSegmentSeconds;
-      phaseElapsed = isResting
-        ? Math.min(restDurationSeconds, Math.floor(tMod - bgRoundSegmentSeconds))
-        : Math.min(maxDurationSeconds, Math.floor(tMod));
+    const tMod = restEnabled ? t % bgCycleSeconds : Math.min(t, bgCycleSeconds);
+    let phase, phaseElapsed;
+    if (tMod < bgLeadInSeconds) {
+      phase = STATE_LEADIN;
+      phaseElapsed = Math.floor(tMod);
+    } else if (tMod < bgRoundSegmentSeconds) {
+      phase = STATE_RUNNING;
+      phaseElapsed = Math.min(maxDurationSeconds, Math.floor(tMod - bgLeadInSeconds));
     } else {
-      isResting = false;
-      phaseElapsed = Math.min(maxDurationSeconds, Math.floor(t));
+      phase = STATE_RESTING;
+      phaseElapsed = Math.min(restDurationSeconds, Math.floor(tMod - bgRoundSegmentSeconds));
     }
-    if (isResting !== (state === STATE_RESTING)) {
-      if (isResting) {
-        setState(STATE_RESTING);
-        stateLabelEl.textContent = "Resting";
-        progressBarEl.classList.add("resting");
-        progressPhaseTarget = restDurationSeconds;
-      } else {
-        setState(STATE_RUNNING);
+    if (phase !== state) {
+      setState(phase);
+      if (phase === STATE_LEADIN) {
+        stateLabelEl.textContent = "Get ready…";
+        clockEl.classList.add("leadin");
+        progressBarEl.classList.remove("resting");
+      } else if (phase === STATE_RUNNING) {
         stateLabelEl.textContent = "Running";
+        clockEl.classList.remove("leadin");
         progressBarEl.classList.remove("resting");
         progressPhaseTarget = maxDurationSeconds;
+      } else {
+        stateLabelEl.textContent = "Resting";
+        clockEl.classList.remove("leadin");
+        progressBarEl.classList.add("resting");
+        progressPhaseTarget = restDurationSeconds;
       }
     }
-    progressPhaseStart = performance.now() - phaseElapsed * 1000;
-    elapsed = phaseElapsed;
-    updateDisplay();
+    if (phase === STATE_LEADIN) {
+      clockEl.textContent = String(bgLeadInSeconds - phaseElapsed);
+      progressPhaseStart = null;
+      progressBarEl.style.width = "0%";
+    } else {
+      progressPhaseStart = performance.now() - phaseElapsed * 1000;
+      elapsed = phaseElapsed;
+      updateDisplay();
+    }
   }
 
   // A non-repeating background session doesn't loop, so it actually fires

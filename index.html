@@ -55,20 +55,23 @@
     padding-top: env(safe-area-inset-top, 20px);
   }
   .header-row {
-    position: relative;
     width: 100%;
     display: flex;
-    justify-content: center;
     align-items: center;
+    gap: 6px;
     margin: 12px 0 20px;
   }
   h1 {
-    font-size: 1.32rem;
+    flex: 1;
+    min-width: 0;
+    font-size: 1.12rem;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
     color: var(--muted);
     margin: 0;
     text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
   }
   .display {
     width: 100%;
@@ -314,17 +317,12 @@
   }
   .icon-btn:active { background: #1e293b; transform: scale(0.94); }
   .icon-btn svg { width: 22px; height: 22px; }
-  /* Positioned within the header row (next to the h1) rather than pinned to
-     the viewport corner, so it always lines up with the title regardless of
-     screen width, and moving it can't shift the title's centered position. */
+  /* A real flex sibling of the h1 (not overlaid on top of it), so it always
+     reserves its own space next to the title instead of floating over the
+     title's text on narrower phones -- the title centers itself in whatever
+     width is left beside it. */
   .header-row .icon-btn {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  .header-row .icon-btn:active {
-    transform: translateY(-50%) scale(0.94);
+    flex-shrink: 0;
   }
 
   .modal-overlay {
@@ -637,7 +635,7 @@
   // Bump the patch number each time this app is pushed to GitHub (per user
   // request) — 1.5.1, 1.5.2, 1.5.3, etc. — until a major/minor bump is
   // explicitly called for.
-  const APP_VERSION = "1.5.23";
+  const APP_VERSION = "1.5.24";
   versionTag.textContent = "v" + APP_VERSION;
 
   // ---------- Persisted settings ----------
@@ -1416,10 +1414,15 @@
   // round is on, its native `loop` repeats the whole lead-in+round+rest
   // cycle forever with no JS needed to trigger each repeat -- that's what
   // actually needs to survive the screen locking or the app being
-  // backgrounded. The setInterval tick here only redraws the clock/progress
-  // bar while foregrounded, by reading the audio's own playback position;
-  // it just pauses harmlessly if the tab is backgrounded (the looping audio
-  // keeps going regardless, with nothing to resync until we come back).
+  // backgrounded. The tick here only redraws the clock/progress bar while
+  // foregrounded, by reading the audio's own playback position; it just
+  // pauses harmlessly if the tab is backgrounded (the looping audio keeps
+  // going regardless, with nothing to resync until we come back). It polls
+  // every 150ms rather than once a second -- a once-a-second poll can only
+  // learn the audio has crossed a whole-second boundary up to a second late
+  // (whenever the poll happens to land relative to that crossing), which is
+  // what made the displayed clock/announcements lag noticeably behind what
+  // was actually heard.
   function beginBackgroundPlayback() {
     elapsed = 0;
     progressBarEl.style.width = "0%";
@@ -1432,7 +1435,7 @@
     applyBackgroundCyclePosition(0);
     tickHandle = setInterval(() => {
       applyBackgroundCyclePosition(bgAudioEl.currentTime);
-    }, 1000);
+    }, 150);
   }
 
   // Figures out which phase (leadin/running/resting) and how far into it the
